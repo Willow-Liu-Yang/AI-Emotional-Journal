@@ -14,7 +14,7 @@ services:
       - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/postgres
     depends_on:
       - db
-    command: uvicorn main:app --host 0.0.0.0 --port 5050 --reload
+    command: bash -c "until pg_isready -h db -p 5432; do sleep 1; done; uvicorn main:app --host 0.0.0.0 --port 5050 --reload"
 
   # ---------- PostgreSQL Database ----------
   db:
@@ -31,17 +31,17 @@ services:
       - pgdata:/var/lib/postgresql/data   # 持久化数据库数据
 
   # ---------- Optional: pgAdmin (database GUI) ----------
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: emotional-journal-pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5051:80"
-    depends_on:
-      - db
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: emotional-journal-pgadmin
+  #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "5051:80"
+  #   depends_on:
+  #     - db
 
 volumes:
   pgdata:
