@@ -1,0 +1,33 @@
+services:
+  backend:
+    build: ./backend
+    container_name: journal_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app          # Mount local code to support hot reloading
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: journal_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:15
+    container_name: journal_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: journal_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
