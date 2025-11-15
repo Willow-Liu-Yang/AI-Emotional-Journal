@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  # ---------- Backend (FastAPI) ----------
+  backend:
+    build: ./backend
+    container_name: emotional-journal-backend
+    restart: always
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./backend:/app         # 热加载：挂载代码文件夹
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/postgres
+    depends_on:
+      - db
+    command: uvicorn main:app --host 0.0.0.0 --port 5050 --reload
+
+  # ---------- PostgreSQL Database ----------
+  db:
+    image: postgres:15
+    container_name: emotional-journal-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # 持久化数据库数据
+
+  # ---------- Optional: pgAdmin (database GUI) ----------
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: emotional-journal-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5051:80"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
