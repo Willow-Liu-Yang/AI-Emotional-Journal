@@ -1,5 +1,20 @@
-# 最小化依赖测试
+# FastAPI core
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-python-dotenv==1.0.0
+
+# ORM + Database
+SQLAlchemy==2.0.23
 psycopg2-binary==2.9.6
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Security
+passlib[bcrypt]
+
+# Data validation
+pydantic[email]==2.5.3
+
+# HTTP requests
+requests==2.31.0
+
