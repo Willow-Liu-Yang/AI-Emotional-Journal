@@ -1,0 +1,49 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+
+# ---- Virtual environment ----
+venv/
+#.env/
+env/
+.venv/
+
+# ---- IDE / Editor ----
+.vscode/
+.idea/
+*.swp
+
+# ---- System files ----
+.DS_Store
+Thumbs.db
+
+# ---- Docker ----
+*.pid
+*.tar
+*.gz
+*.bak
+
+# ---- Database / Backups ----
+*.sql
+*.dump
+pgdata/
+backup.sql
+
+# ---- FastAPI specific ----
+*.coverage
+coverage.xml
+
+# ---- Other build artifacts ----
+dist/
+build/
+*.egg-info/
+
+# ---- Environment variables ----
+#.env
+*.key
+*.pem
