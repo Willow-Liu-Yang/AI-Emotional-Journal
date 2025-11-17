@@ -6,6 +6,9 @@ from schemas import EntryCreate, EntryOut, EntrySummary
 from ai import analyze_emotion_and_reply   # 你需要自己创建的 AI 调用工具
 from datetime import datetime
 
+from schemas import EntryUpdate
+
+
 router = APIRouter(
     prefix="/entries",
     tags=["Journal Entries"]
@@ -141,3 +144,66 @@ def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": f"Entry {entry_id} deleted (soft delete)"}
+
+
+# ------------------------------------------------
+# PUT /entries/{id} —— 编辑日记 + 自动重新 AI 分析
+# ------------------------------------------------
+@router.put("/{entry_id}", response_model=EntryOut)
+def update_entry(entry_id: int, updated: EntryUpdate, db: Session = Depends(get_db)):
+    # 1. 取出原日记
+    entry = db.query(JournalEntry).filter(
+        JournalEntry.id == entry_id,
+        JournalEntry.deleted == False
+    ).first()
+
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    # 2. 更新内容
+    entry.content = updated.content
+
+    # 3. 重新进行 AI 情绪分析（方案 A）
+    emotion_result = analyze_emotion_and_reply(updated.content)
+
+    entry.emotion = emotion_result.get("emotion")
+    entry.emotion_score = emotion_result.get("emotion_score")
+    entry.ai_reply = emotion_result.get("ai_reply")
+
+    # 4. 更新数据库
+    db.commit()
+    db.refresh(entry)
+
+    return entry
+
+# ------------------------------------------------
+# PUT /entries/{id} —— 编辑日记 + 重新触发 AI 分析
+# ------------------------------------------------
+@router.put("/{entry_id}", response_model=EntryOut)
+def update_entry(entry_id: int, update: EntryUpdate, db: Session = Depends(get_db)):
+    entry = db.query(JournalEntry).filter(
+        JournalEntry.id == entry_id,
+        JournalEntry.deleted == False
+    ).first()
+
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+    # 1. 更新文本内容
+    entry.content = update.content
+
+    # 2. 重新执行情绪分析
+    emotion_result = analyze_emotion_and_reply(update.content)
+    entry.emotion = emotion_result["emotion"]
+    entry.emotion_score = emotion_result["score"]
+
+    # 3. 如需要 AI 回复则生成
+    if update.need_ai_reply:
+        entry.ai_reply = emotion_result["reply"]
+    else:
+        entry.ai_reply = None
+
+    db.commit()
+    db.refresh(entry)
+
+    return entry

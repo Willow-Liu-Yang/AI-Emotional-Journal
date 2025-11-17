@@ -70,3 +70,14 @@ class EntryOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class EntryUpdate(BaseModel):
+    content: str
+    need_ai_reply: bool = False
+
+    class Config:
+        orm_mode = True
+
+
+
