@@ -7,9 +7,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, nullable=False)
+    username = Column(String(50), nullable=True)  # ✅ 允许为空
     email = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)
+    password = Column(String(128), nullable=False)  # ✅ 限定长度
 
     # 一对多：一个用户有多条日记
     entries = relationship(

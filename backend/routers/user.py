@@ -32,6 +32,7 @@ def verify_password(plain_password, hashed_password):
 # 注册用户（邮箱 + 密码）
 @router.post("/register", response_model=UserOut)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    print("🟡 REGISTER PASSWORD TYPE:", type(user.password), user.password)  # <---- 加这行
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -50,6 +51,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 # 登录
 @router.post("/login")
 def login_user(user: UserCreate, db: Session = Depends(get_db)):
+    print("🟢 LOGIN PASSWORD TYPE:", type(user.password), user.password)  # <---- 加这行
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
