@@ -10,7 +10,8 @@ services:
     env_file:
       - .env                             # 从 .env 读取 DATABASE_URL
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     restart: always
 
@@ -26,6 +27,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d journal_db"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   postgres_data:

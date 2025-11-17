@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 
@@ -9,16 +9,16 @@ from typing import Optional
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=6, max_length=72)
 
 
 class UserOut(BaseModel):
     id: int
-    username: str
+    username: str | None = None  # ✅ 改为可选
     email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # ✅ 替代旧版 orm_mode
 
 
 class UsernameUpdate(BaseModel):
