@@ -4,6 +4,11 @@ from passlib.context import CryptContext
 from database import SessionLocal
 from models import User
 from schemas import UserCreate, UserOut, UsernameUpdate  # 👈 新加 UsernameUpdate
+from datetime import timedelta
+from auth import create_access_token
+
+from database import get_db
+
 
 router = APIRouter(
     prefix="/users",
@@ -13,13 +18,7 @@ router = APIRouter(
 # 密码加密工具
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 数据库依赖
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 # 工具函数：哈希密码
 def hash_password(password: str):
@@ -40,7 +39,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         email=user.email,
         password=hashed_pw,
-        
+
     )
     db.add(new_user)
     db.commit()
@@ -52,13 +51,19 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login")
 def login_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user or not verify_password(user.password, db_user.password):
+    if not db_user or not pwd_context.verify(user.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
 
+    # 生成 access token（可选设置短期或长期过期）
+    access_token_expires = timedelta(minutes=60)
+    access_token = create_access_token(
+        data={"user_id": db_user.id},
+        expires_delta=access_token_expires
+    )
+
     return {
-        "message": "Login successful",
-        "user_id": db_user.id,
-        "username": db_user.username
+        "access_token": access_token,
+        "token_type": "bearer"
     }
 
 
