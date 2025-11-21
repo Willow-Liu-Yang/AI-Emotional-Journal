@@ -2,7 +2,6 @@ from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 
-
 # --------------------------
 # 用户相关
 # --------------------------
@@ -14,11 +13,11 @@ class UserCreate(BaseModel):
 
 class UserOut(BaseModel):
     id: int
-    username: str | None = None  # ✅ 改为可选
+    username: str | None = None
     email: EmailStr
 
     class Config:
-        from_attributes = True  # ✅ 替代旧版 orm_mode
+        from_attributes = True
 
 
 class UsernameUpdate(BaseModel):
@@ -33,9 +32,7 @@ class EntryCreate(BaseModel):
     content: str
     created_at: Optional[datetime] = None
     need_ai_reply: bool = False
-    
-    # 暂时直接让前端传 user_id
-    user_id: int
+
 
 # --------------------------
 # 日记相关 —— 列表页简要信息
@@ -45,7 +42,6 @@ class EntrySummary(BaseModel):
     id: int
     summary: str
     created_at: datetime
-    user_id: int   # 需要的话可以带上，或者你也可以不返回
 
     class Config:
         orm_mode = True
@@ -61,11 +57,8 @@ class EntryOut(BaseModel):
     created_at: datetime
     user_id: int
 
-    # AI 情绪分析结果
     emotion: Optional[str] = None
     emotion_score: Optional[float] = None
-
-    # AI 回复（可选）
     ai_reply: Optional[str] = None
 
     class Config:
@@ -75,9 +68,3 @@ class EntryOut(BaseModel):
 class EntryUpdate(BaseModel):
     content: str
     need_ai_reply: bool = False
-
-    class Config:
-        orm_mode = True
-
-
-
