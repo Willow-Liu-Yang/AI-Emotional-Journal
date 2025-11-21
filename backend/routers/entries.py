@@ -8,33 +8,31 @@ from datetime import datetime
 
 from schemas import EntryUpdate
 
+from auth import get_current_user
+from models import User
+from database import get_db
+
 
 router = APIRouter(
     prefix="/entries",
     tags=["Journal Entries"]
 )
 
-# 获取数据库会话
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 
 # ------------------------------------------------
 # POST /entries —— 创建日记 + AI 情绪分析（可选）
 # ------------------------------------------------
 @router.post("/", response_model=EntryOut)
-def create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
+def create_entry(entry: EntryCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 
     # 1. 创建原始日记
     new_entry = JournalEntry(
         content=entry.content,
-        created_at=entry.created_at or datetime.utcnow(),
+        created_at=datetime.utcnow(),
         deleted=False,
-        user_id=entry.user_id
+        user_id=current_user.id
     )
     db.add(new_entry)
     db.commit()
@@ -64,10 +62,14 @@ def read_entries(
         date: str | None = Query(None),
         from_date: str | None = Query(None),
         to_date: str | None = Query(None),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
     ):
 
-    query = db.query(JournalEntry).filter(JournalEntry.deleted == False)
+    query = db.query(JournalEntry).filter(
+        JournalEntry.deleted == False,
+        JournalEntry.user_id == current_user.id
+    )
 
     # 按某一天或某个月份筛选
     if date:
@@ -117,9 +119,10 @@ def read_entries(
 # GET /entries/{id} —— 返回完整日记详情
 # ------------------------------------------------
 @router.get("/{entry_id}", response_model=EntryOut)
-def read_entry(entry_id: int, db: Session = Depends(get_db)):
+def read_entry(entry_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     entry = db.query(JournalEntry).filter(
         JournalEntry.id == entry_id,
+        JournalEntry.user_id == current_user.id,
         JournalEntry.deleted == False
     ).first()
     if not entry:
@@ -132,9 +135,10 @@ def read_entry(entry_id: int, db: Session = Depends(get_db)):
 # DELETE /entries/{id} —— 软删除
 # ------------------------------------------------
 @router.delete("/{entry_id}")
-def delete_entry(entry_id: int, db: Session = Depends(get_db)):
+def delete_entry(entry_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
     entry = db.query(JournalEntry).filter(
         JournalEntry.id == entry_id,
+        JournalEntry.user_id == current_user.id,
         JournalEntry.deleted == False
     ).first()
 
@@ -151,60 +155,37 @@ def delete_entry(entry_id: int, db: Session = Depends(get_db)):
 # PUT /entries/{id} —— 编辑日记 + 自动重新 AI 分析
 # ------------------------------------------------
 @router.put("/{entry_id}", response_model=EntryOut)
-def update_entry(entry_id: int, updated: EntryUpdate, db: Session = Depends(get_db)):
-    # 1. 取出原日记
+def update_entry(
+    entry_id: int,
+    update: EntryUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 取出当前用户的日记（权限检查）
     entry = db.query(JournalEntry).filter(
         JournalEntry.id == entry_id,
+        JournalEntry.user_id == current_user.id,   # 只能改自己的
         JournalEntry.deleted == False
     ).first()
 
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
 
-    # 2. 更新内容
-    entry.content = updated.content
-
-    # 3. 重新进行 AI 情绪分析（方案 A）
-    emotion_result = analyze_emotion_and_reply(updated.content)
-
-    entry.emotion = emotion_result.get("emotion")
-    entry.emotion_score = emotion_result.get("emotion_score")
-    entry.ai_reply = emotion_result.get("ai_reply")
-
-    # 4. 更新数据库
-    db.commit()
-    db.refresh(entry)
-
-    return entry
-
-# ------------------------------------------------
-# PUT /entries/{id} —— 编辑日记 + 重新触发 AI 分析
-# ------------------------------------------------
-@router.put("/{entry_id}", response_model=EntryOut)
-def update_entry(entry_id: int, update: EntryUpdate, db: Session = Depends(get_db)):
-    entry = db.query(JournalEntry).filter(
-        JournalEntry.id == entry_id,
-        JournalEntry.deleted == False
-    ).first()
-
-    if not entry:
-        raise HTTPException(status_code=404, detail="Entry not found")
-
-    # 1. 更新文本内容
+    # 更新内容
     entry.content = update.content
 
-    # 2. 重新执行情绪分析
+    # 重新进行 AI 分析
     emotion_result = analyze_emotion_and_reply(update.content)
     entry.emotion = emotion_result["emotion"]
     entry.emotion_score = emotion_result["score"]
 
-    # 3. 如需要 AI 回复则生成
-    if update.need_ai_reply:
-        entry.ai_reply = emotion_result["reply"]
-    else:
-        entry.ai_reply = None
+    # AI 回复（字段名保持一致）
+    entry.ai_reply = emotion_result["reply"] if update.need_ai_reply else None
 
+    # 保存数据库
     db.commit()
     db.refresh(entry)
 
     return entry
+
+
