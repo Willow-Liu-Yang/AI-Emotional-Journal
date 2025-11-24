@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
 import React, { useState } from "react";
+
 import {
   ActivityIndicator,
   Alert,
@@ -16,7 +18,7 @@ import {
 } from "react-native";
 
 // === 修改为你电脑局域网 IP（手机能访问的地址） ===
-const API_URL = "http://192.168.1.10:9000";
+const API_URL = "http://192.168.31.154:9000";
 
 export default function Signup() {
   const [email, setEmail] = useState<string>("");
@@ -44,9 +46,13 @@ export default function Signup() {
       });
 
       if (resp.ok) {
-        // 注册成功：提示并跳转到登录页（也可改为直接登录并保存 token）
-        Alert.alert("Success", "Registration successful. Please log in.");
-        router.replace("/login");
+          const data = await resp.json();
+
+          // 保存用户 ID 供 nickname 页面使用
+          await AsyncStorage.setItem("temp_user_id", String(data.id));
+
+          // 直接跳到 nickname
+          router.replace("/nickname");
       } else {
         // 尝试读取后端错误信息
         const err = await resp.json().catch(() => null);

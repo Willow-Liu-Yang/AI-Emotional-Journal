@@ -3,17 +3,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 // ⭐ 修改成你的后端地址（用电脑局域网IP，不要用 localhost）
-const API_URL = "http://192.168.1.10:9000"; 
+const API_URL = "http://192.168.31.154:9000"; 
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
