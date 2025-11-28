@@ -7,7 +7,7 @@ from fastapi.openapi.utils import get_openapi
 from database import Base, engine
 import pkgutil
 import startup
-from routers import user, system, entries, companion
+from routers import user, system, entries, companion, comments
 
 # ---------------------------------------
 # 创建 app（必须放最前）
@@ -24,6 +24,7 @@ app.include_router(user.router)
 app.include_router(entries.router)
 app.include_router(system.router)
 app.include_router(companion.router)
+app.include_router(comments.router)
 
 # ---------------------------------------
 # 启动事件扫描

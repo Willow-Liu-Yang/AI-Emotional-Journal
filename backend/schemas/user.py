@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from datetime import datetime
 
 from schemas.companion import CompanionOut
 
@@ -31,6 +32,7 @@ class UserOut(BaseModel):
     username: Optional[str] = None
     email: EmailStr
     companion: Optional[CompanionOut] = None   # ⭐ 嵌套 Companion
+    created_at: datetime
 
     class Config:
         from_attributes = True

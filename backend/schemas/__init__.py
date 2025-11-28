@@ -14,15 +14,25 @@ from .entry import (
     EntryCreate,
     EntryOut,
     EntrySummary,
-    EntryUpdate,
+    
 )
 
-# AI Companion（人设）相关
+# -------------------------------
+# AI Companion（人设）
+# -------------------------------
 from .companion import (
-    AICompanionBase,
     AICompanionSummary,
     CompanionSelect,
-    CompanionOut,          
+    CompanionOut,
+    AICompanionBase,
+)
+
+# -------------------------------
+# 评论相关
+# -------------------------------
+from .comment import (
+    CommentCreate,
+    CommentOut,
 )
 
 # 身份认证（如果存在 auth.py）

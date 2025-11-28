@@ -1,42 +1,50 @@
-# backend/schemas/entry.py
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
 
-# 写日记（输入）
+# -------------------------------
+# 创建日记（前端输入）
+# -------------------------------
 class EntryCreate(BaseModel):
     content: str
-    created_at: Optional[datetime] = None
     need_ai_reply: bool = False
+    emotion: Optional[str] = None
+    emotion_intensity: Optional[int] = None  # 1=low, 2=medium, 3=high
 
 
-# 日记列表项（summary）
+# -------------------------------
+# 列表页简要数据（summary）
+# -------------------------------
 class EntrySummary(BaseModel):
     id: int
     summary: str
     created_at: datetime
+    emotion: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-# 日记详情（返回）
+# -------------------------------
+# 详情页（完整输出）
+# -------------------------------
 class EntryOut(BaseModel):
     id: int
-    content: str
-    created_at: datetime
     user_id: int
+    content: str
+    summary: Optional[str]
+    created_at: datetime
 
-    emotion: Optional[str] = None
-    emotion_score: Optional[float] = None
-    ai_reply: Optional[str] = None
+    emotion: Optional[str]
+    emotion_intensity: Optional[int]
+
+    ai_reply: Optional[str]
+
+    # ⭐ 新增：愉悦度（动态计算）
+    pleasure: float
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-# 更新日记
-class EntryUpdate(BaseModel):
-    content: str
-    need_ai_reply: bool = False

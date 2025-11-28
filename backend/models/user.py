@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, func
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -34,6 +34,9 @@ class User(Base):
         "AICompanion",
         lazy="joined"        # 查询用户时自动 JOIN，性能更好
     )
+    
+    # 账号创建时间
+    created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)
 
     # ----------------------------------------
     # 与日记的关系（一对多）
