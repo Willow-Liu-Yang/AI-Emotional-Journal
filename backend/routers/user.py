@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from database import SessionLocal
 from models import User
-from schemas import UserCreate, UserOut, UsernameUpdate  # 👈 新加 UsernameUpdate
+from schemas import UserCreate, UserOut, UsernameUpdate  
 from datetime import timedelta
-from auth import create_access_token
+from core.auth import create_access_token
 
 from database import get_db
 
