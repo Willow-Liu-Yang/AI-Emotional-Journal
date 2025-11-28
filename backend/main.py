@@ -5,41 +5,42 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from database import Base, engine
-
 import pkgutil
 import startup
-
-# Routers
 from routers import user, system, entries, companion
 
-
-# ---------------------------------------------------------
-# 创建 app（必须放在最前面）
-# ---------------------------------------------------------
+# ---------------------------------------
+# 创建 app（必须放最前）
+# ---------------------------------------
 app = FastAPI(
     title="AI Emotional Journal API",
     swagger_ui_parameters={"persistAuthorization": True},
 )
 
+# ---------------------------------------
+# 注册路由（必须在 openapi 前）
+# ---------------------------------------
+app.include_router(user.router)
+app.include_router(entries.router)
+app.include_router(system.router)
+app.include_router(companion.router)
 
-# ---------------------------------------------------------
-# 自动执行 startup/ 目录下的所有 startup 注册函数
-# ---------------------------------------------------------
+# ---------------------------------------
+# 启动事件扫描
+# ---------------------------------------
 for _, module_name, _ in pkgutil.iter_modules(startup.__path__):
     module = __import__(f"startup.{module_name}", fromlist=["register_startup_event"])
     if hasattr(module, "register_startup_event"):
         module.register_startup_event(app)
 
-
-# ---------------------------------------------------------
-# 创建数据库表（如果你没有 Alembic）
-# ---------------------------------------------------------
+# ---------------------------------------
+# 创建数据库
+# ---------------------------------------
 Base.metadata.create_all(bind=engine)
 
-
-# ---------------------------------------------------------
-# 自定义 Swagger 的 JWT 配置
-# ---------------------------------------------------------
+# ---------------------------------------
+# 自定义 Swagger（必须在 include_router 之后）
+# ---------------------------------------
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -52,35 +53,27 @@ def custom_openapi():
     )
 
     openapi_schema["components"]["securitySchemes"] = {
-        "bearerAuth": {
+        "HTTPBearer": {
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT"
         }
     }
 
+    # ⭐⭐⭐ 关键：全局启用 BearerAuth
+    openapi_schema["security"] = [{"HTTPBearer": []}]
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
-
 app.openapi = custom_openapi
 
-
-# ---------------------------------------------------------
-# 注册路由（必须在 app 创建之后）
-# ---------------------------------------------------------
-app.include_router(entries.router)
-app.include_router(user.router)
-app.include_router(system.router)
-app.include_router(companion.router)
-
-
-# ---------------------------------------------------------
-# CORS 设置（如果你需要前端访问）
-# ---------------------------------------------------------
+# ---------------------------------------
+# CORS
+# ---------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # 你可以改成前端 URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

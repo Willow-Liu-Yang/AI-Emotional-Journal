@@ -1,12 +1,13 @@
+# backend/routers/user.py
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from database import SessionLocal
-from models import User
-from schemas import UserCreate, UserOut, UsernameUpdate  
 from datetime import timedelta
-from core.auth import create_access_token
 
+from models import User
+from schemas import UserCreate, UserOut, UsernameUpdate, UserLogin, UserMe
+from core.auth import create_access_token, get_current_user
 from database import get_db
 
 
@@ -15,66 +16,84 @@ router = APIRouter(
     tags=["Users"]
 )
 
-# 密码加密工具
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-
-# 工具函数：哈希密码
+# -----------------------------
+# Helper functions
+# -----------------------------
 def hash_password(password: str):
     return pwd_context.hash(password)
 
-# 工具函数：验证密码
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-# 注册用户（邮箱 + 密码）
+
+# -----------------------------
+# Register
+# -----------------------------
 @router.post("/register", response_model=UserOut)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == user.email).first()
-    if existing_user:
+
+    # Check email exists
+    existing = db.query(User).filter(User.email == user.email).first()
+    if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pw = hash_password(user.password)
+
     new_user = User(
         email=user.email,
         password=hashed_pw,
-
+        companion_id=1   # 默认 Luna
     )
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
     return new_user
 
 
-# 登录
+# -----------------------------
+# Login
+# -----------------------------
 @router.post("/login")
-def login_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user or not pwd_context.verify(user.password, db_user.password):
+def login_user(payload: UserLogin, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.email == payload.email).first()
+    if not db_user or not verify_password(payload.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
 
-    # 生成 access token（可选设置短期或长期过期）
-    access_token_expires = timedelta(minutes=60)
-    access_token = create_access_token(
+    token = create_access_token(
         data={"user_id": db_user.id},
-        expires_delta=access_token_expires
+        expires_delta=timedelta(hours=1)
     )
 
     return {
-        "access_token": access_token,
-        "token_type": "bearer"
+        "access_token": token,
+        "token_type": "bearer",
+        "user": UserOut.model_validate(db_user)
     }
 
 
-# 设置用户名（昵称）
-@router.patch("/{user_id}/username", response_model=UserOut)
-def update_username(user_id: int, username_update: UsernameUpdate, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+# -----------------------------
+# Get current user info
+# -----------------------------
+@router.get("/me", response_model=UserMe)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
-    user.username = username_update.username
+
+# -----------------------------
+# Update username (nickname)
+# -----------------------------
+@router.patch("/me/username", response_model=UserOut)
+def update_username(update: UsernameUpdate,
+                    db: Session = Depends(get_db),
+                    current_user: User = Depends(get_current_user)):
+
+    current_user.username = update.username
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(current_user)
+
+    return current_user

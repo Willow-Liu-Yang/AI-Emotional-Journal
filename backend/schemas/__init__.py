@@ -3,7 +3,9 @@
 # 用户相关
 from .user import (
     UserCreate,
+    UserLogin,
     UserOut,
+    UserMe,
     UsernameUpdate,
 )
 
@@ -20,6 +22,7 @@ from .companion import (
     AICompanionBase,
     AICompanionSummary,
     CompanionSelect,
+    CompanionOut,          
 )
 
 # 身份认证（如果存在 auth.py）

@@ -1,23 +1,51 @@
 # backend/schemas/user.py
+
 from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
+
+from schemas.companion import CompanionOut
 
 
-# 用户注册
+# -------------------------------
+# 用户注册输入
+# -------------------------------
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6, max_length=72)
 
 
-# 用户返回数据
+# -------------------------------
+# 用户登录输入（如果需要）
+# -------------------------------
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+# -------------------------------
+# 用户输出（给前端）
+# 包含 AI 小伙伴信息
+# -------------------------------
 class UserOut(BaseModel):
     id: int
-    username: str | None = None
+    username: Optional[str] = None
     email: EmailStr
+    companion: Optional[CompanionOut] = None   # ⭐ 嵌套 Companion
 
     class Config:
         from_attributes = True
 
 
-# 更新用户名
+# -------------------------------
+# /users/me 输出
+# （暂时和 UserOut 一样）
+# -------------------------------
+class UserMe(UserOut):
+    pass
+
+
+# -------------------------------
+# 用户名更新
+# -------------------------------
 class UsernameUpdate(BaseModel):
     username: str
