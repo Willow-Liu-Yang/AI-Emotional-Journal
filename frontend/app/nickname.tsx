@@ -2,18 +2,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { userApi } from "../api/user";
 
 
 const API_URL = "http://192.168.31.154:9000";
@@ -23,48 +24,37 @@ export default function NicknamePage() {
   const [loading, setLoading] = useState(false);
 
   const handleContinue = async () => {
-    if (!nickname.trim()) {
-      Alert.alert("Error", "Please enter a nickname.");
+  if (!nickname.trim()) {
+    Alert.alert("Error", "Please enter a nickname.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // 1. Load the user ID from signup screen
+    const userId = await AsyncStorage.getItem("temp_user_id");
+
+    if (!userId) {
+      Alert.alert("Error", "Cannot find user ID. Please re-register.");
       return;
     }
 
-    try {
-      setLoading(true);
+    // 2. Use userApi to update nickname (PATCH /users/{id}/username)
+    await userApi.updateNickname(Number(userId), nickname);
 
-      // 1. 获取注册页面存下来的 user_id
-      const userId = await AsyncStorage.getItem("temp_user_id");
+    // 3. Clear temp user ID
+    await AsyncStorage.removeItem("temp_user_id");
 
-      if (!userId) {
-        Alert.alert("Error", "Cannot find user ID. Please re-register.");
-        return;
-      }
-
-      // 2. 调用 PATCH /users/{id}/username
-      const resp = await fetch(`${API_URL}/users/${userId}/username`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: nickname }),
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => null);
-        const msg = err?.detail || "Failed to update nickname.";
-        Alert.alert("Error", msg);
-        return;
-      }
-
-      // 3. 删除临时 user_id
-      await AsyncStorage.removeItem("temp_user_id");
-
-      Alert.alert("Success", "Nickname set successfully!");
-      router.replace("/login");
-    } catch (e) {
-      console.error("nickname error:", e);
-      Alert.alert("Error", "Unable to connect to server.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    Alert.alert("Success", "Nickname set successfully!");
+    router.replace("/login");
+  } catch (err: any) {
+    console.error("Nickname error:", err);
+    Alert.alert("Error", err.message || "Unable to update nickname.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView

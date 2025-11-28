@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
 import React, { useState } from "react";
+import { authApi } from "../api/auth";
+
 
 import {
   ActivityIndicator,
@@ -28,46 +30,34 @@ export default function Signup() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleRegister = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in email and password.");
-      return;
-    }
-    if (password !== confirm) {
-      Alert.alert("Error", "Password and confirm password do not match.");
-      return;
-    }
+  if (!email || !password) {
+    Alert.alert("Error", "Please fill in email and password.");
+    return;
+  }
+  if (password !== confirm) {
+    Alert.alert("Error", "Passwords do not match.");
+    return;
+  }
 
-    try {
-      setLoading(true);
-      const resp = await fetch(`${API_URL}/users/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    setLoading(true);
 
-      if (resp.ok) {
-          const data = await resp.json();
+    // call API wrapper
+    const data = await authApi.register(email, password);
 
-          // 保存用户 ID 供 nickname 页面使用
-          await AsyncStorage.setItem("temp_user_id", String(data.id));
+    // save user id for nickname page
+    await AsyncStorage.setItem("temp_user_id", String(data.id));
 
-          // 直接跳到 nickname
-          router.replace("/nickname");
-      } else {
-        // 尝试读取后端错误信息
-        const err = await resp.json().catch(() => null);
-        const msg =
-          (err && (err.detail || err.message)) ||
-          `Registration failed (status ${resp.status}).`;
-        Alert.alert("Registration failed", String(msg));
-      }
-    } catch (e) {
-      console.error("register error:", e);
-      Alert.alert("Error", "Unable to connect to server.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // navigate to nickname page
+    router.replace("/nickname");
+
+  } catch (err: any) {
+    console.error("register error:", err);
+    Alert.alert("Registration failed", String(err.message || err));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView

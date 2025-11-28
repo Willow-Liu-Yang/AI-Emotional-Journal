@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -11,6 +10,9 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { authApi } from "../api/auth";
+
+
 
 // ⭐ 修改成你的后端地址（用电脑局域网IP，不要用 localhost）
 const API_URL = "http://192.168.31.154:9000"; 
@@ -21,37 +23,26 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in both fields.");
-      return;
-    }
+  if (!email || !password) {
+    Alert.alert("Error", "Please fill in both fields.");
+    return;
+  }
 
-    try {
-      const response = await fetch(`${API_URL}/users/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    // 使用封装好的 authApi.login
+    const data = await authApi.login(email, password);
 
-      if (!response.ok) {
-        Alert.alert("Login Failed", "Invalid email or password.");
-        return;
-      }
+    // token 已在 authApi.login 中自动保存，无需你再保存
 
-      const data = await response.json();
-      const token = data.access_token;
+    // 跳转到主页面
+    router.replace("/(tabs)");
 
-      // 保存 token
-      await AsyncStorage.setItem("token", token);
+  } catch (err: any) {
+    Alert.alert("Login Failed", err.message || "Unable to connect.");
+    console.error("Login error:", err);
+  }
+};
 
-      // 跳转到 APP 主页面
-      router.replace("/(tabs)");
-
-    } catch (error) {
-      Alert.alert("Error", "Unable to connect to the server.");
-      console.error("Login error:", error);
-    }
-  };
 
   return (
     <View style={styles.container}>
