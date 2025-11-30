@@ -1,98 +1,180 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// app/(tabs)/index.tsx
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { authApi } from "@/api/auth";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function HomeScreen() {
+
+const { width } = Dimensions.get("window");
+
+export default function MainPage() {
+  const router = useRouter();
+
+  const [username, setUsername] = useState<string>("");
+
+  // 获取今天日期
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  // 调用 /users/me 获取当前用户
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const data = await authApi.getCurrentUser();
+        if (data?.username) {
+          setUsername(data.username);
+        }
+      } catch (err) {
+        console.log("Failed to load user:", err);
+      }
+    }
+    fetchUser();
+  }, []);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.container}>
+      {/* 顶部栏：日期 + 头像按钮 */}
+      <View style={styles.header}>
+        <Text style={styles.date}>{today}</Text>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <TouchableOpacity onPress={() => router.push("/profile")}>
+          <Image
+            source={require("@/assets/login/bear.png")}
+            style={styles.avatar}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Capybara 图片 */}
+      <Image
+        source={require("@/assets/login/bear.png")}
+        style={styles.capyImage}
+        resizeMode="contain"
+      />
+
+      {/* Greeting */}
+      <Text style={styles.greeting}>Good morning, {username || "friend"}.</Text>
+      <Text style={styles.subtitle}>ready to float with your thoughts today?</Text>
+
+      {/* 轮播图，用 ScrollView 替代外部依赖 */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
+        style={styles.carousel}
+      >
+        <View style={[styles.card, { backgroundColor: "#FFE8D6" }]}>
+          <Text style={styles.cardTitle}>Daily Reflection</Text>
+          <Text style={styles.cardContent}>Take a moment to write down how you feel.</Text>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: "#FCDDEC" }]}>
+          <Text style={styles.cardTitle}>Mood Tracker</Text>
+          <Text style={styles.cardContent}>See how your emotions flow over time.</Text>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: "#D6EAF8" }]}>
+          <Text style={styles.cardTitle}>AI Companion</Text>
+          <Text style={styles.cardContent}>Your personal capybara is here for you.</Text>
+        </View>
+      </ScrollView>
+
+      {/* 写日记按钮 */}
+      <TouchableOpacity style={styles.writeBtn} onPress={() => router.push("/write")}>
+        <Text style={styles.writeBtnText}>Start writing for today</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
+//
+// --- Styles ---
+//
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingTop: 60,
+    backgroundColor: "white",
   },
-  stepContainer: {
-    gap: 8,
+
+  // 顶部栏
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  date: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#444",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+
+  // Capybara 图片
+  capyImage: {
+    width: "100%",
+    height: 180,
+    marginTop: 10,
+  },
+
+  // 文案
+  greeting: {
+    fontSize: 26,
+    fontWeight: "700",
+    marginTop: 15,
+    color: "#333",
+  },
+  subtitle: {
+    fontSize: 15,
+    marginTop: 8,
+    marginBottom: 20,
+    color: "#777",
+  },
+
+  // 轮播图
+  carousel: {
+    marginTop: 10,
+    height: 160,
+  },
+  card: {
+    width: width * 0.75,
+    marginRight: 18,
+    padding: 20,
+    borderRadius: 16,
+    justifyContent: "center",
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
     marginBottom: 8,
+    color: "#333",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  cardContent: {
+    fontSize: 14,
+    color: "#555",
+  },
+
+  // 写日记按钮
+  writeBtn: {
+    backgroundColor: "#6C63FF",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 30,
+  },
+  writeBtnText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
 });
