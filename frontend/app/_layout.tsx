@@ -1,3 +1,5 @@
+// app/_layout.tsx
+
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -10,20 +12,30 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack 
-        initialRouteName="welcome"
+      
+      <Stack
         screenOptions={{
-          headerShown: false,   // ← ← 全局关闭 header！！！！！！
+          headerShown: false,     // 全局关 header
         }}
       >
+        {/* 全局单页页面 */}
         <Stack.Screen name="welcome" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="promptLibrary" />
         <Stack.Screen name="nickname" />
+        <Stack.Screen name="promptLibrary" />
         <Stack.Screen name="write" />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+
+        {/* ⭐ tabs 作为整个系统的子路由 */}
+        <Stack.Screen 
+          name="(tabs)" 
+          options={{ headerShown: false }}  // 🔥 关键：不要替 tabs 添加 header
+        />
+
+        <Stack.Screen 
+          name="modal" 
+          options={{ presentation: 'modal' }} 
+        />
       </Stack>
 
       <StatusBar style="auto" />

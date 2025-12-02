@@ -81,9 +81,12 @@ def get_entries(
             if len(date) == 7:   # YYYY-MM
                 year, month = date.split("-")
                 start = datetime(int(year), int(month), 1)
-                end = datetime(int(year) + (month == "12"), 
-                               1 if month == "12" else int(month)+1, 
-                               1)
+                month_int = int(month)
+
+                if month_int == 12:
+                    end = datetime(int(year) + 1, 1, 1)
+                else:
+                    end = datetime(int(year), month_int + 1, 1)
             else:                # YYYY-MM-DD
                 start = datetime.fromisoformat(date)
                 end = start.replace(hour=23, minute=59, second=59)
