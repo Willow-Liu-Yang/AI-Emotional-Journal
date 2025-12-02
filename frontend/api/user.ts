@@ -3,8 +3,8 @@ import { apiRequest } from "./index";
 
 export const userApi = {
   /** Update user's nickname */
-  async updateNickname(userId: number, nickname: string) {
-    return apiRequest(`/users/${userId}/username`, {
+  async updateNickname(nickname: string) {
+    return apiRequest("/users/me/username", {
       method: "PATCH",
       body: JSON.stringify({ username: nickname }),
     });

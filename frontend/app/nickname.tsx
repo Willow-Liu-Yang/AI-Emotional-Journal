@@ -16,45 +16,41 @@ import {
 } from "react-native";
 import { userApi } from "../api/user";
 
-
-const API_URL = "http://192.168.31.154:9000";
+// 🔥 按你的要求：保留 API_URL
+const API_URL = "http://192.168.31.27:9000/";
 
 export default function NicknamePage() {
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleContinue = async () => {
-  if (!nickname.trim()) {
-    Alert.alert("Error", "Please enter a nickname.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    // 1. Load the user ID from signup screen
-    const userId = await AsyncStorage.getItem("temp_user_id");
-
-    if (!userId) {
-      Alert.alert("Error", "Cannot find user ID. Please re-register.");
+    if (!nickname.trim()) {
+      Alert.alert("Error", "Please enter a nickname.");
       return;
     }
 
-    // 2. Use userApi to update nickname (PATCH /users/{id}/username)
-    await userApi.updateNickname(Number(userId), nickname);
+    try {
+      setLoading(true);
 
-    // 3. Clear temp user ID
-    await AsyncStorage.removeItem("temp_user_id");
+      // Debug token 存不存在
+      const token = await AsyncStorage.getItem("access_token");
+      console.log("TOKEN in nickname:", token);
 
-    Alert.alert("Success", "Nickname set successfully!");
-    router.replace("/login");
-  } catch (err: any) {
-    console.error("Nickname error:", err);
-    Alert.alert("Error", err.message || "Unable to update nickname.");
-  } finally {
-    setLoading(false);
-  }
-};
+      // 🔥 使用正确 API：PATCH /users/me/username
+      await userApi.updateNickname(nickname);
+
+      Alert.alert("Success", "Nickname set successfully!");
+
+      // 🔥 昵称成功后直接进入主界面（tabs）
+      router.replace("/(tabs)");
+
+    } catch (err: any) {
+      console.error("Nickname error:", err);
+      Alert.alert("Error", err.message || "Unable to update nickname.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -66,7 +62,6 @@ export default function NicknamePage() {
           What should we{"\n"}call you?
         </Text>
 
-        {/* 图片路径 */}
         <Image
           source={require("../assets/images/login/bear.png")}
           style={styles.illustration}

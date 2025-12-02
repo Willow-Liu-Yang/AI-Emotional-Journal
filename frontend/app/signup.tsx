@@ -20,7 +20,9 @@ import {
 } from "react-native";
 
 // === 修改为你电脑局域网 IP（手机能访问的地址） ===
-const API_URL = "http://192.168.31.154:9000";
+//const API_URL = "http://192.168.31.154:9000";
+export const API_URL = "http://192.168.31.27:9000"; // your backend URL
+
 
 export default function Signup() {
   const [email, setEmail] = useState<string>("");

@@ -1,7 +1,8 @@
 // frontend/api/index.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const API_URL = "http://192.168.31.137:9000"; // your backend URL
+//export const API_URL = "http://192.168.31.137:9000"; // your backend URL
+export const API_URL = "http://192.168.31.27:9000"; // your backend URL
 
 const TOKEN_KEY = "access_token";
 

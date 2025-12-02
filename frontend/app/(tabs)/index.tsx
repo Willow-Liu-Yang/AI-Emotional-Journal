@@ -43,7 +43,7 @@ export default function MainPage() {
 
         <TouchableOpacity onPress={() => router.push("/profile")}>
           <Image
-            source={require("@/assets/login/bear.png")}
+            source={require("@/assets/images/login/bear.png")}
             style={styles.avatar}
           />
         </TouchableOpacity>
@@ -51,7 +51,7 @@ export default function MainPage() {
 
       {/* Capybara 图片 */}
       <Image
-        source={require("@/assets/login/bear.png")}
+        source={require("@/assets/images/login/bear.png")}
         style={styles.capyImage}
         resizeMode="contain"
       />
