@@ -1,53 +1,69 @@
-// components/HomeCard.tsx
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Text, TouchableOpacity, StyleSheet, View } from "react-native";
 
-type HomeCardProps = {
+export interface HomeCardProps {
   icon: any;
   title: string;
   text: string;
   background: string;
-};
+  onPress?: () => void;
+}
 
-export function HomeCard({ icon, title, text, background }: HomeCardProps) {
+export function HomeCard({
+  icon,
+  title,
+  text,
+  background,
+  onPress,
+}: HomeCardProps) {
   return (
-    <View style={[styles.card, { backgroundColor: background }]}>
-      {/* 图标 + 标题一行 */}
-      <View style={styles.headerRow}>
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[styles.card, { backgroundColor: background }]}
+    >
+      {/* Row：图标 + 标题 */}
+      <View style={styles.row}>
         <Image source={icon} style={styles.icon} />
         <Text style={styles.title}>{title}</Text>
       </View>
 
-      {/* 描述文字 */}
+      {/* Text 在下一行 */}
       <Text style={styles.text}>{text}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: "100%", // 具体宽度由外层控制（用于 peek 效果）
-    borderRadius: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    borderRadius: 20,
+    padding: 18,
+    minHeight: 150,
+    justifyContent: "flex-start",
   },
-  headerRow: {
+
+  // 横向排列 icon + title
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 8,
   },
+
   icon: {
     width: 32,
     height: 32,
+    marginRight: 10,
     resizeMode: "contain",
   },
+
   title: {
     fontSize: 18,
     fontWeight: "700",
     color: "#4A3828",
-    marginLeft: 10,
   },
+
   text: {
     fontSize: 14,
     color: "#7A6A54",
+    lineHeight: 20,
   },
 });

@@ -16,15 +16,14 @@ import {
 import { HomeCard } from "@/components/HomeCard";
 
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.78;   // 一张卡片的宽度（略小于屏幕，制造 peek 效果）
-const CARD_SPACING = 18;           // 卡片之间的间距
+const CARD_WIDTH = width * 0.78;
+const CARD_SPACING = 18;
 
 export default function MainPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
-  // Figma 风格：SATURDAY, NOVEMBER 22
   const today = new Date()
     .toLocaleDateString("en-US", {
       weekday: "long",
@@ -59,19 +58,17 @@ export default function MainPage() {
         </TouchableOpacity>
       </View>
 
-      {/* Greeting 在图片上面 */}
       <Text style={styles.greeting}>
         Good morning, {username || "friend"}.
       </Text>
 
-      {/* 水豚插画 */}
       <Image
         source={require("@/assets/images/login/bear.png")}
         style={styles.capyImage}
         resizeMode="contain"
       />
 
-      {/* Ready + See All（两行，See All 右对齐） */}
+      {/* Ready + See All */}
       <View style={styles.promptHeader}>
         <Text style={styles.promptText}>
           Ready to float with your thoughts?
@@ -85,7 +82,7 @@ export default function MainPage() {
         </TouchableOpacity>
       </View>
 
-      {/* ===== 卡片 + 圆点：固定高度的容器，圆点绝对定位在底部 ===== */}
+      {/* Prompt 卡片轮播 */}
       <View style={styles.carouselWrapper}>
         <ScrollView
           horizontal
@@ -104,38 +101,56 @@ export default function MainPage() {
           scrollEventThrottle={16}
           style={styles.carousel}
         >
-          {/* 1 */}
+          {/* 1 Capture Joy */}
           <View style={{ width: CARD_WIDTH }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/capture_joy.png")}
               title="Capture Joy"
               text="What little moment brought you joy today?"
               background="#FAF1E5"
+              onPress={() =>
+                router.push({
+                  pathname: "/write",
+                  params: { promptKey: "capture_joy" },
+                })
+              }
             />
           </View>
 
-          {/* 2 */}
+          {/* 2 Let It Out */}
           <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/let_it_out.png")}
               title="Let It Out"
               text="What feelings have been quietly rising inside you?"
               background="#FAF1E5"
+              onPress={() =>
+                router.push({
+                  pathname: "/write",
+                  params: { promptKey: "let_it_out" },
+                })
+              }
             />
           </View>
 
-          {/* 3 */}
+          {/* 3 Steps Forward */}
           <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/steps_forward.png")}
               title="Steps Forward"
               text="What small step did you take toward something important?"
               background="#FAF1E5"
+              onPress={() =>
+                router.push({
+                  pathname: "/write",
+                  params: { promptKey: "steps_forward" },
+                })
+              }
             />
           </View>
         </ScrollView>
 
-        {/* 圆点叠在卡片容器底部，不再受外层布局影响 */}
+        {/* 圆点 */}
         <View style={styles.dotsOverlay}>
           {[0, 1, 2].map((i) => (
             <View
@@ -146,7 +161,7 @@ export default function MainPage() {
         </View>
       </View>
 
-      {/* 写日记按钮 */}
+      {/* 不带 prompt 的写日记按钮 */}
       <TouchableOpacity
         style={styles.writeBtn}
         onPress={() => router.push("/write")}
@@ -158,7 +173,7 @@ export default function MainPage() {
 }
 
 //
-// ─── Styles ─────────────────────────────────────────────
+// ─── Styles ─────────────────────────────
 //
 const styles = StyleSheet.create({
   container: {
@@ -198,7 +213,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Ready + See All
   promptHeader: {
     paddingHorizontal: 22,
     marginTop: 8,
@@ -215,27 +229,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#4A3828",
+    textDecorationLine: "underline",     // ← added
   },
 
-  // ===== 卡片 + 圆点容器 =====
   carouselWrapper: {
     marginTop: 8,
-    height: 170,          // 整块区域高度（卡片 + 圆点）
-    position: "relative", // 让圆点可以 absolute 定位
+    height: 200,       // ← increased from 170
+    position: "relative",
   },
   carousel: {
     flexGrow: 0,
   },
 
-  // 圆点叠在容器底部
   dotsOverlay: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 8,                    // 距离卡片底部的距离
+    bottom: 8,
     flexDirection: "row",
     justifyContent: "center",
   },
+
   dot: {
     width: 8,
     height: 8,

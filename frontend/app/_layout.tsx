@@ -10,12 +10,20 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="welcome">
-        <Stack.Screen name="welcome" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="signup" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+      <Stack 
+        initialRouteName="welcome"
+        screenOptions={{
+          headerShown: false,   // ← ← 全局关闭 header！！！！！！
+        }}
+      >
+        <Stack.Screen name="welcome" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="promptLibrary" />
+        <Stack.Screen name="nickname" />
+        <Stack.Screen name="write" />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
 
       <StatusBar style="auto" />

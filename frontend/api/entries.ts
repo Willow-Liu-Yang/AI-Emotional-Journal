@@ -3,8 +3,14 @@ import { apiRequest } from "./index";
 
 export const entriesApi = {
   /** Get all entries of current user */
-  async getAll() {
-    return apiRequest("/entries/", {
+  async getAll(params?: { date?: string; from_date?: string; to_date?: string }) {
+    const query = new URLSearchParams();
+
+    if (params?.date) query.append("date", params.date);
+    if (params?.from_date) query.append("from_date", params.from_date);
+    if (params?.to_date) query.append("to_date", params.to_date);
+
+    return apiRequest(`/entries/?${query.toString()}`, {
       method: "GET",
     });
   },
@@ -17,20 +23,19 @@ export const entriesApi = {
   },
 
   /** Create new journal entry */
-  async create(content: string) {
+  async create(payload: {
+    content: string;
+    emotion: string;             // 六选一：sad / happy / fear / etc.
+    emotion_intensity: number;   // 1 / 2 / 3
+    need_ai_reply: boolean;      // 开关
+  }) {
     return apiRequest("/entries/", {
       method: "POST",
-      body: JSON.stringify({ content }),
+      body: JSON.stringify(payload),
     });
   },
 
-  /** Update existing entry */
-  async update(id: number, content: string) {
-    return apiRequest(`/entries/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ content }),
-    });
-  },
+  
 
   /** Soft delete entry */
   async remove(id: number) {
