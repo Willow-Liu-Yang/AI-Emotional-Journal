@@ -3,31 +3,41 @@
 import { authApi } from "@/api/auth";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
+import { HomeCard } from "@/components/HomeCard";
 
 const { width } = Dimensions.get("window");
+const CARD_WIDTH = width * 0.78;   // 一张卡片的宽度（略小于屏幕，制造 peek 效果）
+const CARD_SPACING = 18;           // 卡片之间的间距
 
 export default function MainPage() {
   const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const [username, setUsername] = useState<string>("");
+  // Figma 风格：SATURDAY, NOVEMBER 22
+  const today = new Date()
+    .toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    })
+    .toUpperCase();
 
-  // 获取今天日期
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-
-  // 调用 /users/me 获取当前用户
   useEffect(() => {
     async function fetchUser() {
       try {
         const data = await authApi.getCurrentUser();
-        if (data?.username) {
-          setUsername(data.username);
-        }
+        if (data?.username) setUsername(data.username);
       } catch (err) {
         console.log("Failed to load user:", err);
       }
@@ -37,54 +47,110 @@ export default function MainPage() {
 
   return (
     <View style={styles.container}>
-      {/* 顶部栏：日期 + 头像按钮 */}
+      {/* 顶部日期 + 头像 */}
       <View style={styles.header}>
         <Text style={styles.date}>{today}</Text>
 
         <TouchableOpacity onPress={() => router.push("/profile")}>
           <Image
-            source={require("@/assets/images/login/bear.png")}
+            source={require("@/assets/images/profile/Profile.png")}
             style={styles.avatar}
           />
         </TouchableOpacity>
       </View>
 
-      {/* Capybara 图片 */}
+      {/* Greeting 在图片上面 */}
+      <Text style={styles.greeting}>
+        Good morning, {username || "friend"}.
+      </Text>
+
+      {/* 水豚插画 */}
       <Image
         source={require("@/assets/images/login/bear.png")}
         style={styles.capyImage}
         resizeMode="contain"
       />
 
-      {/* Greeting */}
-      <Text style={styles.greeting}>Good morning, {username || "friend"}.</Text>
-      <Text style={styles.subtitle}>ready to float with your thoughts today?</Text>
+      {/* Ready + See All（两行，See All 右对齐） */}
+      <View style={styles.promptHeader}>
+        <Text style={styles.promptText}>
+          Ready to float with your thoughts?
+        </Text>
 
-      {/* 轮播图，用 ScrollView 替代外部依赖 */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        style={styles.carousel}
-      >
-        <View style={[styles.card, { backgroundColor: "#FFE8D6" }]}>
-          <Text style={styles.cardTitle}>Daily Reflection</Text>
-          <Text style={styles.cardContent}>Take a moment to write down how you feel.</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.seeAllButton}
+          onPress={() => router.push("/promptLibrary")}
+        >
+          <Text style={styles.seeAll}>See All &gt;</Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={[styles.card, { backgroundColor: "#FCDDEC" }]}>
-          <Text style={styles.cardTitle}>Mood Tracker</Text>
-          <Text style={styles.cardContent}>See how your emotions flow over time.</Text>
-        </View>
+      {/* ===== 卡片 + 圆点：固定高度的容器，圆点绝对定位在底部 ===== */}
+      <View style={styles.carouselWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={CARD_WIDTH + CARD_SPACING}
+          snapToAlignment="center"
+          contentContainerStyle={{
+            paddingHorizontal: (width - CARD_WIDTH) / 2,
+          }}
+          onScroll={(e) => {
+            const x = e.nativeEvent.contentOffset.x;
+            const index = Math.round(x / (CARD_WIDTH + CARD_SPACING));
+            setCurrentPage(index);
+          }}
+          scrollEventThrottle={16}
+          style={styles.carousel}
+        >
+          {/* 1 */}
+          <View style={{ width: CARD_WIDTH }}>
+            <HomeCard
+              icon={require("@/assets/images/icons/prompt/capture_joy.png")}
+              title="Capture Joy"
+              text="What little moment brought you joy today?"
+              background="#FAF1E5"
+            />
+          </View>
 
-        <View style={[styles.card, { backgroundColor: "#D6EAF8" }]}>
-          <Text style={styles.cardTitle}>AI Companion</Text>
-          <Text style={styles.cardContent}>Your personal capybara is here for you.</Text>
+          {/* 2 */}
+          <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
+            <HomeCard
+              icon={require("@/assets/images/icons/prompt/let_it_out.png")}
+              title="Let It Out"
+              text="What feelings have been quietly rising inside you?"
+              background="#FAF1E5"
+            />
+          </View>
+
+          {/* 3 */}
+          <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
+            <HomeCard
+              icon={require("@/assets/images/icons/prompt/steps_forward.png")}
+              title="Steps Forward"
+              text="What small step did you take toward something important?"
+              background="#FAF1E5"
+            />
+          </View>
+        </ScrollView>
+
+        {/* 圆点叠在卡片容器底部，不再受外层布局影响 */}
+        <View style={styles.dotsOverlay}>
+          {[0, 1, 2].map((i) => (
+            <View
+              key={i}
+              style={[styles.dot, currentPage === i && styles.activeDot]}
+            />
+          ))}
         </View>
-      </ScrollView>
+      </View>
 
       {/* 写日记按钮 */}
-      <TouchableOpacity style={styles.writeBtn} onPress={() => router.push("/write")}>
+      <TouchableOpacity
+        style={styles.writeBtn}
+        onPress={() => router.push("/write")}
+      >
         <Text style={styles.writeBtnText}>Start writing for today</Text>
       </TouchableOpacity>
     </View>
@@ -92,27 +158,25 @@ export default function MainPage() {
 }
 
 //
-// --- Styles ---
+// ─── Styles ─────────────────────────────────────────────
 //
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 22,
-    paddingTop: 60,
-    backgroundColor: "white",
+    paddingTop: 50,
+    backgroundColor: "#F5EAD9",
   },
 
-  // 顶部栏
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 22,
   },
   date: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#444",
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#7A6A54",
   },
   avatar: {
     width: 40,
@@ -120,57 +184,76 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
 
-  // Capybara 图片
+  greeting: {
+    paddingHorizontal: 22,
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#4A3828",
+    marginTop: 10,
+  },
+
   capyImage: {
     width: "100%",
     height: 180,
-    marginTop: 10,
+    marginTop: 4,
   },
 
-  // 文案
-  greeting: {
-    fontSize: 26,
-    fontWeight: "700",
-    marginTop: 15,
-    color: "#333",
-  },
-  subtitle: {
-    fontSize: 15,
+  // Ready + See All
+  promptHeader: {
+    paddingHorizontal: 22,
     marginTop: 8,
-    marginBottom: 20,
-    color: "#777",
+  },
+  promptText: {
+    fontSize: 15,
+    color: "#7A6A54",
+  },
+  seeAllButton: {
+    alignSelf: "flex-end",
+    marginTop: 4,
+  },
+  seeAll: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#4A3828",
   },
 
-  // 轮播图
-  carousel: {
-    marginTop: 10,
-    height: 160,
+  // ===== 卡片 + 圆点容器 =====
+  carouselWrapper: {
+    marginTop: 8,
+    height: 170,          // 整块区域高度（卡片 + 圆点）
+    position: "relative", // 让圆点可以 absolute 定位
   },
-  card: {
-    width: width * 0.75,
-    marginRight: 18,
-    padding: 20,
-    borderRadius: 16,
+  carousel: {
+    flexGrow: 0,
+  },
+
+  // 圆点叠在容器底部
+  dotsOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 8,                    // 距离卡片底部的距离
+    flexDirection: "row",
     justifyContent: "center",
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 8,
-    color: "#333",
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#C9C2B5",
+    marginHorizontal: 5,
   },
-  cardContent: {
-    fontSize: 14,
-    color: "#555",
+  activeDot: {
+    backgroundColor: "#9DBA96",
   },
 
-  // 写日记按钮
   writeBtn: {
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#9DBA96",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 30,
+    marginHorizontal: 22,
+    marginTop: 12,
   },
   writeBtnText: {
     color: "#fff",
