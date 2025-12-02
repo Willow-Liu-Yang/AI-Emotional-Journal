@@ -10,12 +10,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+
 import { authApi } from "../api/auth";
-
-
-
-// ⭐ 修改成你的后端地址（用电脑局域网IP，不要用 localhost）
-const API_URL = "http://192.168.31.154:9000"; 
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -23,32 +19,31 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-  if (!email || !password) {
-    Alert.alert("Error", "Please fill in both fields.");
-    return;
-  }
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in both fields.");
+      return;
+    }
 
-  try {
-    // 使用封装好的 authApi.login
-    const data = await authApi.login(email, password);
+    try {
+      // 调用封装好的 authApi.login（不需要写 URL）
+      const data = await authApi.login(email, password);
 
-    // token 已在 authApi.login 中自动保存，无需你再保存
+      // token 已自动在 authApi 中 setToken
+      // 这里不需要再处理
 
-    // 跳转到主页面
-    router.replace("/(tabs)");
+      // 登录成功 → 跳转主界面 tabs
+      router.replace("/(tabs)");
 
-  } catch (err: any) {
-    Alert.alert("Login Failed", err.message || "Unable to connect.");
-    console.error("Login error:", err);
-  }
-};
-
+    } catch (err: any) {
+      console.error("Login error:", err);
+      Alert.alert("Login Failed", err.message || "Unable to connect.");
+    }
+  };
 
   return (
     <View style={styles.container}>
-
       {/* 插图 */}
-      <Image 
+      <Image
         source={require("../assets/images/login/bear.png")}
         style={styles.illustration}
       />
@@ -58,7 +53,7 @@ export default function LoginScreen() {
       {/* Email 输入框 */}
       <Text style={styles.label}>Email</Text>
       <View style={styles.inputWrapper}>
-        <TextInput 
+        <TextInput
           style={styles.input}
           placeholder="your@email.com"
           placeholderTextColor="#c6b7a6"
@@ -72,7 +67,7 @@ export default function LoginScreen() {
       {/* Password 输入框 */}
       <Text style={[styles.label, { marginTop: 16 }]}>Password</Text>
       <View style={styles.inputWrapper}>
-        <TextInput 
+        <TextInput
           style={styles.input}
           placeholder="••••••••••"
           placeholderTextColor="#c6b7a6"
@@ -81,10 +76,10 @@ export default function LoginScreen() {
           onChangeText={setPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <Ionicons 
-            name={showPassword ? "eye-off-outline" : "eye-outline"} 
-            size={22} 
-            color="#5a4634" 
+          <Ionicons
+            name={showPassword ? "eye-off-outline" : "eye-outline"}
+            size={22}
+            color="#5a4634"
           />
         </TouchableOpacity>
       </View>
@@ -101,7 +96,6 @@ export default function LoginScreen() {
           <Text style={styles.signup}>Sign Up</Text>
         </TouchableOpacity>
       </View>
-
     </View>
   );
 }
@@ -170,5 +164,5 @@ const styles = StyleSheet.create({
     color: "#5A4634",
     fontWeight: "600",
     textDecorationLine: "underline",
-  }
+  },
 });

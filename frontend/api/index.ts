@@ -1,9 +1,34 @@
 // frontend/api/index.ts
+
+import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-//export const API_URL = "http://192.168.31.137:9000"; // your backend URL
-export const API_URL = "http://192.168.31.27:9000"; // your backend URL
+/**
+ * ============================================
+ *  自动检测本机的局域网 IP（适用于 Expo）
+ *  e.g. hostUri = "192.168.31.27:8081"
+ *  自动取出前半部分 → "192.168.31.27"
+ * ============================================
+ */
+const hostUri = Constants.expoConfig?.hostUri;
+const LAN_IP = hostUri?.split(":")[0] ?? "localhost";
 
+/**
+ * ============================================
+ *  全局统一后端 API 地址
+ *  不需要手动改 IP，自动识别
+ *  e.g. http://192.168.31.27:9000
+ * ============================================
+ */
+export const API_URL = `http://${LAN_IP}:9000`;
+
+console.log("🌐 Using API_URL:", API_URL);
+
+/**
+ * ============================================
+ *  Token 管理
+ * ============================================
+ */
 const TOKEN_KEY = "access_token";
 
 /** Save token */
@@ -22,10 +47,12 @@ export async function clearToken() {
 }
 
 /**
- * Main API request wrapper
- * - attaches Authorization header automatically
- * - parses JSON safely
- * - throws Error on non-200 response
+ * ============================================
+ *  全局主请求方法 apiRequest
+ *  - 自动附加 token
+ *  - 自动解析 json
+ *  - 非 200 自动抛出错误
+ * ============================================
  */
 export async function apiRequest(
   path: string,
@@ -49,6 +76,7 @@ export async function apiRequest(
 
   const txt = await resp.text().catch(() => "");
   let body = null;
+
   try {
     body = txt ? JSON.parse(txt) : null;
   } catch {

@@ -16,9 +16,6 @@ import {
 } from "react-native";
 import { userApi } from "../api/user";
 
-// 🔥 按你的要求：保留 API_URL
-const API_URL = "http://192.168.31.27:9000/";
-
 export default function NicknamePage() {
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,16 +29,16 @@ export default function NicknamePage() {
     try {
       setLoading(true);
 
-      // Debug token 存不存在
+      // Debug：查看 token 是否存在
       const token = await AsyncStorage.getItem("access_token");
       console.log("TOKEN in nickname:", token);
 
-      // 🔥 使用正确 API：PATCH /users/me/username
+      // 使用统一 API：PATCH /users/me/username
       await userApi.updateNickname(nickname);
 
       Alert.alert("Success", "Nickname set successfully!");
 
-      // 🔥 昵称成功后直接进入主界面（tabs）
+      // 昵称设置成功后 → 直接跳转主界面
       router.replace("/(tabs)");
 
     } catch (err: any) {
