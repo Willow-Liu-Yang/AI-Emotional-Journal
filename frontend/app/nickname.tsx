@@ -29,16 +29,22 @@ export default function NicknamePage() {
     try {
       setLoading(true);
 
-      // Debug：查看 token 是否存在
-      const token = await AsyncStorage.getItem("access_token");
+      // 读取 token（key 必须和 signup 一致）
+      const token = await AsyncStorage.getItem("token");
       console.log("TOKEN in nickname:", token);
 
-      // 使用统一 API：PATCH /users/me/username
+      if (!token) {
+        Alert.alert("Not logged in", "Please log in again.");
+        router.replace("/login");
+        return;
+      }
+
+      // PATCH /users/me/username
       await userApi.updateNickname(nickname);
 
       Alert.alert("Success", "Nickname set successfully!");
 
-      // 昵称设置成功后 → 直接跳转主界面
+      // 昵称设置成功 → 跳转主界面 tabs
       router.replace("/(tabs)");
 
     } catch (err: any) {

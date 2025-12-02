@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { authApi } from "../api/auth";
 
-
 import {
   ActivityIndicator,
   Alert,
@@ -19,8 +18,6 @@ import {
   View,
 } from "react-native";
 
-
-
 export default function Signup() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -29,34 +26,38 @@ export default function Signup() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleRegister = async () => {
-  if (!email || !password) {
-    Alert.alert("Error", "Please fill in email and password.");
-    return;
-  }
-  if (password !== confirm) {
-    Alert.alert("Error", "Passwords do not match.");
-    return;
-  }
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in email and password.");
+      return;
+    }
+    if (password !== confirm) {
+      Alert.alert("Error", "Passwords do not match.");
+      return;
+    }
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // call API wrapper
-    const data = await authApi.register(email, password);
+      // 1️⃣ 注册接口（现在后端已返回 access_token + user）
+      const data = await authApi.register(email, password);
 
-    // save user id for nickname page
-    await AsyncStorage.setItem("temp_user_id", String(data.id));
+      // 2️⃣ 保存 token（关键步骤！）
+      if (data?.access_token) {
+        await AsyncStorage.setItem("token", data.access_token);
+      } else {
+        console.warn("⚠️ Register response missing access_token:", data);
+      }
 
-    // navigate to nickname page
-    router.replace("/nickname");
+      // 3️⃣ 跳到 nickname 界面
+      router.replace("/nickname");
 
-  } catch (err: any) {
-    console.error("register error:", err);
-    Alert.alert("Registration failed", String(err.message || err));
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (err: any) {
+      console.error("register error:", err);
+      Alert.alert("Registration failed", String(err.message || err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -66,7 +67,6 @@ export default function Signup() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.headerText}>Let&apos;s get cozy.</Text>
 
-        {}
         <Image
           source={require("../assets/images/login/bear.png")}
           style={styles.illustration}
@@ -133,7 +133,7 @@ export default function Signup() {
           )}
         </TouchableOpacity>
 
-        {/* Footer: already have account */}
+        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already have an account? </Text>
           <TouchableOpacity onPress={() => router.push("/login")}>

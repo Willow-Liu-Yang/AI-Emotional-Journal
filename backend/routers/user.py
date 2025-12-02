@@ -32,7 +32,7 @@ def verify_password(plain_password, hashed_password):
 # -----------------------------
 # Register
 # -----------------------------
-@router.post("/register", response_model=UserOut)
+@router.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     # Check email exists
@@ -45,14 +45,25 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         email=user.email,
         password=hashed_pw,
-        companion_id=1   # 默认 Luna
+        companion_id=1
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    return new_user
+    # ⭐ 注册完自动登录
+    token = create_access_token(
+        data={"user_id": new_user.id},
+        expires_delta=timedelta(hours=1)
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": UserOut.model_validate(new_user)
+    }
+
 
 
 # -----------------------------
