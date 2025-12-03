@@ -229,6 +229,8 @@ export default function JournalListPage() {
 
 /** ---- Journal Card（日记卡片） ---- **/
 function JournalCard({ entry }: any) {
+  const router = useRouter(); // ⭐ 在子组件里也用 useRouter
+
   const dateObj = new Date(entry.created_at);
   const day = dateObj.getDate();
   const weekday = dateObj
@@ -240,7 +242,10 @@ function JournalCard({ entry }: any) {
   const emotionColor = EMOTION_COLORS[emotionKey] || "#D8CABC"; // 默认一个柔和米色
 
   return (
-    <TouchableOpacity style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => router.push(`/entries/${entry.id}`)}   // ⭐ 跳转详情页
+    >
       {/* 日期块 */}
       <View style={styles.dateBox}>
         <Text style={styles.day}>{day}</Text>

@@ -110,7 +110,7 @@ export default function MainPage() {
               background="#FAF1E5"
               onPress={() =>
                 router.push({
-                  pathname: "/write",
+                  pathname: "/entries/write",
                   params: { promptKey: "capture_joy" },
                 })
               }
@@ -126,7 +126,7 @@ export default function MainPage() {
               background="#FAF1E5"
               onPress={() =>
                 router.push({
-                  pathname: "/write",
+                  pathname: "/entries/write",
                   params: { promptKey: "let_it_out" },
                 })
               }
@@ -142,7 +142,7 @@ export default function MainPage() {
               background="#FAF1E5"
               onPress={() =>
                 router.push({
-                  pathname: "/write",
+                  pathname: "/entries/write",
                   params: { promptKey: "steps_forward" },
                 })
               }
@@ -164,7 +164,7 @@ export default function MainPage() {
       {/* 不带 prompt 的写日记按钮 */}
       <TouchableOpacity
         style={styles.writeBtn}
-        onPress={() => router.push("/write")}
+        onPress={() => router.push("/entries/write")}
       >
         <Text style={styles.writeBtnText}>Start writing for today</Text>
       </TouchableOpacity>
@@ -229,12 +229,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#4A3828",
-    textDecorationLine: "underline",     // ← added
+    textDecorationLine: "underline",
   },
 
   carouselWrapper: {
     marginTop: 8,
-    height: 200,       // ← increased from 170
+    height: 200,
     position: "relative",
   },
   carousel: {
