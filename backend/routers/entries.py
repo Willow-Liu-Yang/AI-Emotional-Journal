@@ -45,7 +45,7 @@ def create_entry(
     # 如果需要 AI 回复
     if entry.need_ai_reply:
         # 这里你之后再接真实 AI 调用就行
-        new_entry.ai_reply = "AI 回复功能尚未配置"
+        new_entry.ai_reply = "AI reply function is not yet configured."
 
     db.add(new_entry)
     db.commit()
