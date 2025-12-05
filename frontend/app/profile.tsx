@@ -1,6 +1,6 @@
 import { authApi } from "@/api/auth";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Image,
@@ -11,19 +11,23 @@ import {
   View,
 } from "react-native";
 
-// ---------- types ----------
-type Companion = {
-  name?: string;
-  identity_title?: string;
-  tags?: string[];
-  theme_color?: string;
-};
+import type { Companion } from "@/api/companions"; // ✅ 复用类型
 
+// ---------- types ----------
 type SettingsItem = {
   key: string;
   label: string;
   icon: any;
   route?: string;
+};
+
+// /users/me 返回的大致结构
+type CurrentUser = {
+  id: number;
+  username?: string | null;
+  email: string;
+  created_at: string;
+  companion?: Companion | null;
 };
 
 // ---------- config ----------
@@ -74,20 +78,31 @@ const getCompanionImage = (name?: string) => {
 // ---------- component ----------
 export default function ProfileScreen() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
-  // 加载用户信息
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const data = await authApi.getCurrentUser();
-        setUser(data);
-      } catch (err) {
-        console.log("Failed to load user:", err);
+  // ⭐ 每次页面获得焦点时重新拉 /users/me
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function loadUser() {
+        try {
+          const data = await authApi.getCurrentUser();
+          if (active) {
+            setUser(data as CurrentUser);
+          }
+        } catch (err) {
+          console.log("Failed to load user:", err);
+        }
       }
-    }
-    loadUser();
-  }, []);
+
+      loadUser();
+
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   if (!user) {
     return (
@@ -105,7 +120,8 @@ export default function ProfileScreen() {
       })
     : "";
 
-  const companion: Companion | null = user.companion || null;
+  const companion = user.companion || null;
+
   const companionTags =
     companion?.tags && companion.tags.length > 0
       ? companion.tags
@@ -116,7 +132,7 @@ export default function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
-      {/* Header 区域 */}
+      {/* 顶部标题栏：背景 = 整页背景色 */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
           {/* 左侧关闭按钮 */}
@@ -135,8 +151,10 @@ export default function ProfileScreen() {
           {/* 右侧占位，用来让标题居中 */}
           <View style={{ width: 48 }} />
         </View>
+      </View>
 
-        {/* 用户信息行 */}
+      {/* 人物部分：整条色带，左右贴边 */}
+      <View style={styles.profileSection}>
         <View style={styles.profileRow}>
           <View style={styles.avatarWrapper}>
             <Image
@@ -146,20 +164,23 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.profileText}>
-            <Text style={styles.usernameText}>
-              {user.username || "User"}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.usernameText}>
+                {user.username || "User"}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.editIconBtn}
+                onPress={() => router.push("/profile/edit")}
+              >
+                <Ionicons name="pencil" size={18} color="#7E5F42" />
+              </TouchableOpacity>
+            </View>
+
             {joinDate ? (
               <Text style={styles.joinText}>Joined on {joinDate}</Text>
             ) : null}
           </View>
-
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => router.push("/profile/edit")}
-          >
-            <Text style={styles.editText}>Edit</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -175,37 +196,51 @@ export default function ProfileScreen() {
           ]}
           onPress={() => router.push("/profile/companion")}
         >
-          <View style={styles.companionAvatarWrapper}>
-            <Image
-              source={getCompanionImage(companion?.name)}
-              style={styles.companionAvatar}
-            />
-          </View>
+          {/* 上半行：头像 + 文本，箭头跟名字同一行 */}
+          <View style={styles.companionTopRow}>
+            <View style={styles.companionAvatarWrapper}>
+              <Image
+                source={getCompanionImage(companion?.name)}
+                style={styles.companionAvatar}
+              />
+            </View>
 
-          <View style={styles.companionTextWrapper}>
-            <Text style={styles.companionSectionTitle}>My AI Companion</Text>
+            <View style={styles.companionTextWrapper}>
+              <Text style={styles.companionSectionTitle}>My AI Companion</Text>
 
-            <View style={styles.companionNameRow}>
-              <Text style={styles.companionNameText}>
-                {companion?.name || "Luna"}
-              </Text>
-              <Text style={styles.dot}> · </Text>
-              <Text style={styles.companionSubtitleText}>
+              <View style={styles.companionNameRow}>
+                <Text
+                  style={styles.companionNameText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {companion?.name || "Luna"}
+                </Text>
+
+                <Ionicons
+                  name="chevron-forward"
+                  size={22}
+                  color="#7E5F42"
+                />
+              </View>
+
+              <Text
+                style={styles.companionSubtitleText}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
                 {companion?.identity_title || "Your Gentle Companion"}
               </Text>
             </View>
-
-            <View style={styles.tagRow}>
-              {companionTags.map((t, i) => (
-                <View key={i} style={styles.tag}>
-                  <Text style={styles.tagText}>{t}</Text>
-                </View>
-              ))}
-            </View>
           </View>
 
-          <View style={styles.cardArrow}>
-            <Ionicons name="chevron-forward" size={22} color="#7E5F42" />
+          {/* 下半行：标签，单独一整行 */}
+          <View style={styles.tagRow}>
+            {companionTags.map((t, i) => (
+              <View key={i} style={styles.tag}>
+                <Text style={styles.tagText}>{t}</Text>
+              </View>
+            ))}
           </View>
         </TouchableOpacity>
 
@@ -252,7 +287,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7E7D3", // 整体米黄色
+    backgroundColor: "#F7E7D3", // 整页背景
   },
   loadingContainer: {
     flex: 1,
@@ -261,18 +296,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7E7D3",
   },
 
+  // 顶部标题栏：只放标题，背景用整页的颜色
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
-    paddingBottom: 24,
-    backgroundColor: "#EBCDA3",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingBottom: 8,
+    backgroundColor: "#F7E7D3",
   },
   headerTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 18,
     justifyContent: "space-between",
   },
   closeBtn: {
@@ -295,63 +328,77 @@ const styles = StyleSheet.create({
     color: "#4A2C22",
   },
 
+  // 人物区域：整条色块，左右铺满 + 稍微更高
+  profileSection: {
+    backgroundColor: "#EBCDA3",
+    paddingHorizontal: 24,
+    paddingTop: 22,
+    paddingBottom: 26, // ⭐ 拉高一点
+  },
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   avatarWrapper: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 2,
+    width: 88,              // ⭐ 头像更大
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
     borderColor: "#D7A871",
     backgroundColor: "#F9EAD8",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
+    marginRight: 16,
   },
   avatarImg: {
-    width: 64,
-    height: 64,
+    width: 72,
+    height: 72,
     resizeMode: "cover",
   },
   profileText: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   usernameText: {
-    fontSize: 24,
+    fontSize: 26,          // ⭐ 字稍微大一点
     fontWeight: "700",
     color: "#4A2C22",
   },
-  joinText: {
-    marginTop: 4,
-    fontSize: 14,
-    color: "#7E5F42",
-  },
-  editBtn: {
+  editIconBtn: {
     marginLeft: 8,
+    padding: 4,
+    borderRadius: 999,
   },
-  editText: {
-    fontSize: 14,
+  joinText: {
+    marginTop: 6,
+    fontSize: 15,          // ⭐ 略大一点
     color: "#7E5F42",
   },
 
   content: {
     paddingHorizontal: 24,
-    paddingTop: 18,
+    paddingTop: 24,        // ⭐ 和人物区域拉开一点
   },
 
   companionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
     borderRadius: 22,
-    backgroundColor: "#DADFEA", // 默认 Luna 底色
+    backgroundColor: "#DADFEA",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 4,
+  },
+
+  // 上半行：头像 + 文本
+  companionTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   companionAvatarWrapper: {
     width: 68,
@@ -359,6 +406,9 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     overflow: "hidden",
     marginRight: 14,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   companionAvatar: {
     width: "100%",
@@ -375,28 +425,27 @@ const styles = StyleSheet.create({
   },
   companionNameRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "baseline",
+    alignItems: "center",
+    justifyContent: "space-between", // 左名字右箭头
   },
   companionNameText: {
     fontSize: 20,
     fontWeight: "700",
     color: "#4A2C22",
-  },
-  dot: {
-    fontSize: 16,
-    color: "#7E5F42",
-    marginHorizontal: 4,
-  },
-  companionSubtitleText: {
-    fontSize: 14,
-    color: "#7E5F42",
+    marginRight: 8,
     flexShrink: 1,
   },
+  companionSubtitleText: {
+    marginTop: 4,
+    fontSize: 14,
+    color: "#7E5F42",
+  },
+
+  // 下半行：标签
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 8,
+    marginTop: 10,
   },
   tag: {
     paddingHorizontal: 10,
@@ -410,12 +459,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#4A2C22",
-  },
-
-  cardArrow: {
-    marginLeft: 12,
-    alignItems: "center",
-    justifyContent: "center",
   },
 
   menuSection: {

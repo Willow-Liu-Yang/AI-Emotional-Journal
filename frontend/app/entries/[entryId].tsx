@@ -23,9 +23,21 @@ type EntryDetail = {
   content: string;
   created_at: string;
   emotion: string | null;
-  emotion_intensity: number | null;
+  emotion_intensity: number | null; // 1 / 2 / 3
   pleasure: number | null;
-  ai_reply?: string | null;
+
+  // 来自后端的 AIReply 对象
+  ai_reply?:
+    | {
+        id: number;
+        entry_id: number;
+        companion_id: number;
+        reply_type: string;
+        content: string;
+        model_name?: string | null;
+        created_at: string;
+      }
+    | null;
 };
 
 type Comment = {
@@ -33,6 +45,28 @@ type Comment = {
   content: string;
   created_at: string;
   author_name?: string | null;
+};
+
+// 根据 companion_id 映射头像 + 名字 + 副标题
+const COMPANION_UI: Record<
+  number,
+  { name: string; subtitle: string; avatar: any }
+> = {
+  1: {
+    name: "Luna",
+    subtitle: "Warmly listening",
+    avatar: require("@/assets/images/profile/luna.png"),
+  },
+  2: {
+    name: "Sol",
+    subtitle: "Bright encouragement",
+    avatar: require("@/assets/images/profile/sol.png"),
+  },
+  3: {
+    name: "Terra",
+    subtitle: "Steady grounding",
+    avatar: require("@/assets/images/profile/terra.png"),
+  },
 };
 
 export default function EntryDetailScreen() {
@@ -43,7 +77,8 @@ export default function EntryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [showMoodSummary, setShowMoodSummary] = useState(true);
+  // ⭐ 默认收起 Mood Summary
+  const [showMoodSummary, setShowMoodSummary] = useState(false);
 
   const [reflection, setReflection] = useState("");
   const [sending, setSending] = useState(false);
@@ -81,7 +116,7 @@ export default function EntryDetailScreen() {
       try {
         setLoading(true);
         const data = await entriesApi.getOne(Number(entryId));
-        if (active) setEntry(data);
+        if (active) setEntry(data as EntryDetail);
       } catch (e: any) {
         if (active) setError(e?.message || "Failed to load entry.");
       } finally {
@@ -213,6 +248,10 @@ export default function EntryDetailScreen() {
     ]);
   };
 
+  // ------- AI 卡片用到的 UI 数据 -------
+  const companionId = entry?.ai_reply?.companion_id ?? 1;
+  const companionUI = COMPANION_UI[companionId] ?? COMPANION_UI[1];
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F2E4D2" }}>
       {/* Header：和 write.tsx 一致，但多一行时间 */}
@@ -261,19 +300,24 @@ export default function EntryDetailScreen() {
             {entry.ai_reply && (
               <View style={styles.aiCard}>
                 <View style={styles.aiHeaderRow}>
-                  <View style={styles.aiAvatar}>
-                    <Text style={styles.aiAvatarText}>L</Text>
+                  <View style={styles.aiAvatarWrapper}>
+                    <Image
+                      source={companionUI.avatar}
+                      style={styles.aiAvatarImage}
+                    />
                   </View>
                   <View>
-                    <Text style={styles.aiName}>Luna</Text>
-                    <Text style={styles.aiSubtitle}>Warmly listening</Text>
+                    <Text style={styles.aiName}>{companionUI.name}</Text>
+                    <Text style={styles.aiSubtitle}>
+                      {companionUI.subtitle}
+                    </Text>
                   </View>
                 </View>
-                <Text style={styles.aiText}>{entry.ai_reply}</Text>
+                <Text style={styles.aiText}>{entry.ai_reply.content}</Text>
               </View>
             )}
 
-            {/* Mood Summary 卡片（更方一点） */}
+            {/* Mood Summary 卡片（默认收起） */}
             <View style={styles.moodCard}>
               <TouchableOpacity
                 style={styles.moodToggleRow}
@@ -297,7 +341,10 @@ export default function EntryDetailScreen() {
                     style={{ marginRight: 6 }}
                   />
                   <Text style={styles.moodLine}>
-                    {formatEmotion(entry.emotion)}
+                    {formatEmotionWithIntensity(
+                      entry.emotion,
+                      entry.emotion_intensity
+                    )}
                   </Text>
                 </View>
               )}
@@ -357,10 +404,24 @@ export default function EntryDetailScreen() {
   );
 }
 
-// 把情绪首字母大写，没选情绪时给一个简单占位
-function formatEmotion(emotion: string | null): string {
-  if (!emotion) return "No emotion selected yet";
-  return emotion.charAt(0).toUpperCase() + emotion.slice(1);
+// 把情绪 + 强度变成人类可读
+function formatEmotionWithIntensity(
+  emotion: string | null,
+  intensity: number | null
+): string {
+  if (!emotion) return "No emotion detected yet";
+
+  const base =
+    emotion.charAt(0).toUpperCase() + emotion.slice(1).toLowerCase();
+
+  if (!intensity) return base;
+
+  let label = "";
+  if (intensity === 1) label = "low";
+  else if (intensity === 2) label = "medium";
+  else if (intensity === 3) label = "high";
+
+  return label ? `${base} · ${label} intensity` : base;
 }
 
 // 单条留言卡片
@@ -467,19 +528,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  aiAvatar: {
+  aiAvatarWrapper: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    overflow: "hidden",
     backgroundColor: "#FFDFA4",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
   },
-  aiAvatarText: {
-    fontWeight: "700",
-    fontSize: 18,
-    color: "#5A3E24",
+  aiAvatarImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   aiName: {
     fontSize: 15,
@@ -494,6 +556,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     color: "#4A341E",
+    marginTop: 4,
   },
 
   // Mood Summary 区域（更方）

@@ -3,15 +3,16 @@ import { userApi } from "@/api/user";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Image,
 } from "react-native";
 
 export default function EditProfileScreen() {
@@ -34,7 +35,10 @@ export default function EditProfileScreen() {
         setNickname(data?.username ?? "");
       } catch (err) {
         console.log("Failed to load user", err);
-        Alert.alert("Error", "Unable to load your profile. Please try again later.");
+        Alert.alert(
+          "Error",
+          "Unable to load your profile. Please try again later."
+        );
       } finally {
         if (mounted) setLoading(false);
       }
@@ -86,27 +90,52 @@ export default function EditProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 12, color: "#666" }}>Loading profile…</Text>
+        <ActivityIndicator size="large" color="#6A4A2A" />
+        <Text style={{ marginTop: 12, color: "#6A4A2A" }}>
+          Loading profile…
+        </Text>
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "white" }}
+      style={styles.page}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.container}>
-        <Text style={styles.title}>Edit Profile</Text>
+      {/* 顶部：和 Profile 一致的标题栏 */}
+      <View style={styles.header}>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => router.back()}
+            disabled={submitting}
+          >
+            <Image
+              source={require("@/assets/images/profile/icon_close_capy.png")}
+              style={styles.closeIcon}
+            />
+          </TouchableOpacity>
 
-        <View style={styles.form}>
+          <Text style={styles.headerTitle}>Edit Profile</Text>
+
+          <View style={{ width: 48 }} />
+        </View>
+      </View>
+
+      {/* 内容 */}
+      <View style={styles.content}>
+        <View style={styles.formCard}>
           <Text style={styles.label}>Nickname</Text>
           <TextInput
             value={nickname}
-            onChangeText={(t) => setNickname(t)}
+            onChangeText={setNickname}
             placeholder="Enter your nickname"
-            style={[styles.input, error ? { borderColor: "#FF6B6B" } : null]}
+            placeholderTextColor="#B08A68"
+            style={[
+              styles.input,
+              error ? { borderColor: "#D16A5A", backgroundColor: "#FFF4F2" } : null,
+            ]}
             editable={!submitting}
             maxLength={30}
             returnKeyType="done"
@@ -116,14 +145,15 @@ export default function EditProfileScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.saveBtn, submitting ? { opacity: 0.7 } : null]}
+          style={[styles.saveBtn, submitting && { opacity: 0.7 }]}
           onPress={onSave}
           disabled={submitting}
+          activeOpacity={0.9}
         >
           {submitting ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveText}>Save</Text>
+            <Text style={styles.saveText}>Save changes</Text>
           )}
         </TouchableOpacity>
 
@@ -139,65 +169,108 @@ export default function EditProfileScreen() {
   );
 }
 
-//
-// ---------- STYLE ----------
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: "#F7E7D3",
+  },
+
   loadingWrap: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#F7E7D3",
   },
 
-  container: {
+  // 顶部标题栏
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
+    backgroundColor: "#F7E7D3",
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  closeBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: "contain",
+  },
+  headerTitle: {
     flex: 1,
-    paddingTop: 70,
-    paddingHorizontal: 22,
-    backgroundColor: "white",
-  },
-
-  title: {
-    fontSize: 26,
+    textAlign: "center",
+    fontSize: 22,
     fontWeight: "700",
-    marginBottom: 24,
+    color: "#4A2C22",
   },
 
-  form: {
-    marginTop: 8,
+  // 内容区
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+
+  formCard: {
+    backgroundColor: "#F8F2EA",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
 
   label: {
     fontSize: 14,
-    color: "#444",
+    color: "#7E5F42",
     marginBottom: 8,
     fontWeight: "600",
   },
 
   input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#E6E6E6",
+    height: 46,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E0C8AA",
     paddingHorizontal: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
+    color: "#4A2C22",
   },
 
   errorText: {
     marginTop: 8,
-    color: "#FF6B6B",
+    color: "#D16A5A",
     fontSize: 13,
   },
 
   saveBtn: {
-    marginTop: 30,
-    backgroundColor: "#6C63FF",
+    marginTop: 26,
+    backgroundColor: "#7CA073", // 和日记页 send 按钮同色
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   saveText: {
-    color: "white",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -207,7 +280,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelText: {
-    color: "#666",
+    color: "#7E5F42",
     fontSize: 15,
   },
 });

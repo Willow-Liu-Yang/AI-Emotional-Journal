@@ -16,8 +16,8 @@ class UserCreate(BaseModel):
 
 
 # -------------------------------
-# 用户登录输入（如果需要）
-# ----------------ss---------------
+# 用户登录输入
+# -------------------------------
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -31,7 +31,13 @@ class UserOut(BaseModel):
     id: int
     username: Optional[str] = None
     email: EmailStr
-    companion: Optional[CompanionOut] = None   # ⭐ 嵌套 Companion
+
+    # 当前绑定的 AI 伴侣 id（可选，方便前端直接用）
+    companion_id: Optional[int] = None
+
+    # 当前绑定的 AI 伴侣详情
+    companion: Optional[CompanionOut] = None
+
     created_at: datetime
 
     class Config:
@@ -40,7 +46,6 @@ class UserOut(BaseModel):
 
 # -------------------------------
 # /users/me 输出
-# （暂时和 UserOut 一样）
 # -------------------------------
 class UserMe(UserOut):
     pass

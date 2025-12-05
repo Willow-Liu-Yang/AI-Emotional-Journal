@@ -1,6 +1,41 @@
 // frontend/api/entries.ts
 import { apiRequest } from "./index";
 
+// ============== 类型定义 ==============
+
+// 后端 AIReplyOut 映射
+export interface AIReply {
+  id: number;
+  entry_id: number;
+  companion_id: number;
+  reply_type: string;
+  content: string;
+  model_name?: string | null;
+  created_at: string;
+}
+
+// 后端 EntrySummary 映射（列表用）
+export interface EntrySummary {
+  id: number;
+  summary: string;
+  created_at: string;
+  emotion?: string | null;
+}
+
+// 后端 EntryOut 映射（详情用）
+export interface Entry {
+  id: number;
+  user_id: number;
+  content: string;
+  summary: string | null;
+  created_at: string;
+  emotion?: string | null;
+  emotion_intensity?: number | null;
+  ai_reply?: AIReply | null;   // ⭐ 现在是对象，不是 string 了
+  pleasure: number;
+}
+
+// 评论类型
 export interface EntryComment {
   id: number;
   content: string;
@@ -10,7 +45,11 @@ export interface EntryComment {
 
 export const entriesApi = {
   /** Get all entries of current user */
-  async getAll(params?: { date?: string; from_date?: string; to_date?: string }) {
+  async getAll(params?: {
+    date?: string;
+    from_date?: string;
+    to_date?: string;
+  }): Promise<EntrySummary[]> {
     const query = new URLSearchParams();
 
     if (params?.date) query.append("date", params.date);
@@ -26,7 +65,7 @@ export const entriesApi = {
   },
 
   /** Get single entry by ID */
-  async getOne(id: number) {
+  async getOne(id: number): Promise<Entry> {
     return apiRequest(`/entries/${id}`, {
       method: "GET",
     });
@@ -35,8 +74,6 @@ export const entriesApi = {
   /** Create new journal entry */
   async create(payload: {
     content: string;
-    emotion: string;
-    emotion_intensity: number;
     need_ai_reply: boolean;
   }) {
     return apiRequest("/entries/", {
@@ -45,10 +82,26 @@ export const entriesApi = {
     });
   },
 
+
   /** Soft delete entry */
   async remove(id: number) {
     return apiRequest(`/entries/${id}`, {
       method: "DELETE",
+    });
+  },
+
+  // ===============================
+  // AI 回复相关
+  // ===============================
+
+  /** 让当前 AI 伴侣给某条日记生成 / 获取回复 */
+  async generateAiReply(
+    entryId: number,
+    options?: { forceRegenerate?: boolean }
+  ): Promise<AIReply> {
+    const force = options?.forceRegenerate ? "?force_regenerate=true" : "";
+    return apiRequest(`/entries/${entryId}/ai_reply${force}`, {
+      method: "POST",
     });
   },
 

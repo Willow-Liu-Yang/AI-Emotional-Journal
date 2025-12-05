@@ -27,15 +27,23 @@ class JournalEntry(Base):
     # 情绪强度：1=低, 2=中, 3=高
     emotion_intensity = Column(Integer, nullable=True)
 
-    # AI 回复（如果用户选择生成）
-    ai_reply = Column(Text, nullable=True)
+    # ✅ 不再直接存文本回复，而是通过关系访问 AIReply
+    ai_reply = relationship(
+        "AIReply",
+        back_populates="entry",
+        uselist=False,              # 一篇日记最多一条回复
+        cascade="all, delete-orphan",
+    )
 
     # 软删除标记
     deleted = Column(Boolean, default=False, nullable=False)
-    
-    #JournalEntry反向关系
-    comments = relationship("JournalComment", back_populates="entry", cascade="all, delete-orphan")
 
+    # JournalEntry 反向关系：评论
+    comments = relationship(
+        "JournalComment",
+        back_populates="entry",
+        cascade="all, delete-orphan",
+    )
 
     # ⭐ 动态计算愉悦度（不存数据库）
     @property
@@ -46,7 +54,7 @@ class JournalEntry(Base):
             "surprise": 4,
             "sad": 2,
             "fear": 1,
-            "anger": 0
+            "anger": 0,
         }
 
         base = base_scores.get(self.emotion, 0)
@@ -54,7 +62,7 @@ class JournalEntry(Base):
         intensity_weight = {
             1: 1.0,
             2: 1.2,
-            3: 1.5
+            3: 1.5,
         }
 
         weight = intensity_weight.get(self.emotion_intensity, 1.0)
