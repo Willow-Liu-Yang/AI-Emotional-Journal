@@ -8,6 +8,9 @@ from models import JournalEntry, AICompanion, User
 from .ai_topic_service import extract_themes
 from .ai_summary_service import generate_summary_message
 
+# ⭐ 新增：引入 Calendar 生成逻辑
+from .calendar_service import build_week_calendar, build_month_calendar
+
 VALENCE = {
     "joy": 2,
     "calm": 1,
@@ -48,15 +51,15 @@ def get_entries(db: Session, user_id: int, start, end):
 
 def aggregate_insights(db: Session, current_user: User, range_type: str):
     """
-    current_user: SQLAlchemy User instance (includes .companion relationship if loaded)
+    聚合统计数据 + 主题分析 + 情绪趋势 + Calendar + AI Summary
     """
     print("DEBUG current_user.id =", current_user.id)
 
     user_id = current_user.id
+
     # 1. 取时间范围
     start, end = get_date_range(range_type)
 
-    # DEBUG 打印时间范围
     print("\n========== DEBUG INSIGHTS RANGE ==========")
     print(f"User ID: {user_id}")
     print(f"Range Type: {range_type}")
@@ -66,7 +69,6 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
     # 2. 查询数据
     entries = get_entries(db, user_id, start, end)
 
-    # ⭐⭐⭐ DEBUG：打印查询到的 entries ⭐⭐⭐
     print("========== DEBUG ENTRIES FETCHED ==========")
     if not entries:
         print("No entries returned from DB query!")
@@ -105,7 +107,6 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
         v = VALENCE.get(e.emotion, 0)
         trend[d] = trend.get(d, 0) + v
 
-    # normalize trend ordering
     emotion_trend = [
         {"date": d, "valence": v}
         for d, v in sorted(trend.items())
@@ -130,13 +131,23 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
     theme_distribution = {t: round(w / total, 3) for t, w in all_themes.items()}
 
     # ------------------------------
-    # E. Mood Booster & Stressors (简化版 AI 关键词统计)
+    # ⭐ E. Calendar（周视图 / 月视图）
+    # ------------------------------
+    if range_type == "week":
+        calendar_data = build_week_calendar(db, current_user)
+    else:
+        # month 参数使用当前日期的 "YYYY-MM"
+        month_str = datetime.today().strftime("%Y-%m")
+        calendar_data = build_month_calendar(db, current_user, month_str)
+
+    # ------------------------------
+    # F. Mood Booster & Stressors (占位)
     # ------------------------------
     booster = ["Morning Run", "Coffee Time", "Drawing"]
     stressors = ["Deadlines", "Rainy days"]
 
     # ------------------------------
-    # F. A Note from companion (using companion persona)
+    # G. A Note from Companion
     # ------------------------------
     companion_obj = None
     if hasattr(current_user, "companion") and current_user.companion:
@@ -148,6 +159,7 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
             "persona_prompt": getattr(c, "persona_prompt", None),
         }
     else:
+        # fallback to Luna
         default_c = db.query(AICompanion).filter(AICompanion.id == 1).first()
         if default_c:
             companion_obj = {
@@ -159,11 +171,15 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
 
     note = generate_summary_message(companion_obj, emotion_trend, emotion_counts)
 
+    # ------------------------------
+    # H. Return 聚合结果（包含 calendar）
+    # ------------------------------
     return {
         "stats": stats,
         "themes": theme_distribution,
         "emotions": emotion_counts,
         "valence_trend": emotion_trend,
+        "calendar": calendar_data,            # ⭐⭐ 新增字段
         "booster": booster,
         "stressors": stressors,
         "note": note,
