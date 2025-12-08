@@ -1,5 +1,4 @@
 // components/insights/FeelingsSection.tsx
-
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
@@ -15,35 +14,59 @@ export default function FeelingsSection({ emotions }: Props) {
 
   const total = Object.values(emotions).reduce((a, b) => a + b, 0) || 1;
 
-  // fixed color scheme matching UI
+  // colors (tuned sadness to be more bluish)
   const COLORS: Record<string, string> = {
-    joy: "#EEC373",
-    calm: "#C7D8C5",
-    anxiety: "#9FA4AF",
-    sadness: "#A8B8D0",
+    joy: "#EEC373",      // warm yellow
+    calm: "#C7D8C5",     // soft green
+    anxiety: "#9FA4AF",  // grayish
+    sadness: "#A3B6D6",  // bluish (was too gray previously)
     anger: "#D28A7C",
     tired: "#CDBBA7",
   };
 
-  // donut chart setup
+  // donut chart params
   const size = 160;
   const strokeWidth = 26;
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
 
-  let offsetStart = 0;
+  // We'll iterate entries in a stable order: sort by count desc to make large arcs first (optional)
+  const entries = Object.entries(emotions).sort((a, b) => b[1] - a[1]);
+
+  // cumulative fraction tracker
+  let cumulative = 0;
 
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Top Feelings</Text>
 
       <View style={styles.container}>
-        {/* Donut Chart */}
         <Svg width={size} height={size}>
-          {Object.entries(emotions).map(([emotion, count], index) => {
-            const pct = count / total;
-            const strokeDashoffset = circumference * (1 - pct);
+          {/* base circle as faint background */}
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke="#EFE8DD"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+
+          {/* draw slices: each slice uses strokeDasharray and strokeDashoffset.
+              strokeDashoffset is computed from cumulative fraction so slices are placed consecutively. */}
+          {entries.map(([emotion, count]) => {
+            const pct = (count || 0) / total;
+            const arcLength = pct * circumference;
+
+            // strokeDasharray: draw arcLength then gap
+            const dashArray = `${arcLength} ${circumference - arcLength}`;
+
+            // strokeDashoffset: place the arc so its end aligns with cumulative position
+            // We compute offset as circumference * (1 - cumulative - pct)
+            // but using cumulative BEFORE adding current pct places the current arc after previous arcs.
+            const offset = circumference * (1 - cumulative - pct);
+
             const circle = (
               <Circle
                 key={emotion}
@@ -52,31 +75,31 @@ export default function FeelingsSection({ emotions }: Props) {
                 r={radius}
                 stroke={COLORS[emotion] ?? "#ccc"}
                 strokeWidth={strokeWidth}
-                strokeDasharray={`${circumference} ${circumference}`}
-                strokeDashoffset={circumference - offsetStart * circumference}
-                strokeLinecap="round"
+                strokeDasharray={dashArray}
+                strokeDashoffset={offset}
+                strokeLinecap="butt" // avoid visible gaps between arcs; change to "round" if you want rounded ends and handle overlap
                 fill="transparent"
-                rotation={-90}
+                rotation="-90"
                 origin={`${center}, ${center}`}
               />
             );
-            offsetStart += pct;
+
+            cumulative += pct;
             return circle;
           })}
         </Svg>
 
-        {/* Right Side Emotion List */}
+        {/* Right side legend */}
         <View style={styles.listContainer}>
-          {Object.entries(emotions)
-            .sort((a, b) => b[1] - a[1])
-            .map(([emotion, count]) => (
+          {entries.map(([emotion, count]) => {
+            const pct = (count || 0) / total;
+            return (
               <Text key={emotion} style={styles.listItem}>
-                <Text style={{ color: COLORS[emotion] ?? "#666" }}>
-                  ●{" "}
-                </Text>
-                {capitalize(emotion)} ({Math.round((count / total) * 100)}%)
+                <Text style={{ color: COLORS[emotion] ?? "#666" }}>● </Text>
+                {capitalize(emotion)} ({Math.round(pct * 100)}%)
               </Text>
-            ))}
+            );
+          })}
         </View>
       </View>
     </View>
