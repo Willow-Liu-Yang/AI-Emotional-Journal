@@ -1,21 +1,20 @@
-
 services:
   backend:
     build: ./backend
     container_name: journal_backend
     ports:
-      - "9000:8000"                      # 访问 http://localhost:5000
+      - "9000:8000"
     volumes:
-      - ./backend:/app                   # 支持代码热加载
+      - ./backend:/app
     env_file:
-      - .env                             # 从 .env 读取 DATABASE_URL
+      - .env
     depends_on:
       db:
         condition: service_healthy
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     restart: always
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
 
   db:
     image: postgres:15

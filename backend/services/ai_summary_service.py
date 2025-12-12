@@ -1,43 +1,51 @@
 # backend/services/ai_summary_service.py
 
 from typing import Optional, Dict, Any
-from core.ai_client import generate_text_with_gemini
+from core.ai_client import call_siliconflow
+
 
 def build_summary_prompt(companion: Optional[Dict[str, Any]], emotion_trend, top_emotions):
     """
-    companion: dict-like object (may contain 'name' and 'persona_prompt' and 'identity_title')
-    emotion_trend: list/dict for recent valence
-    top_emotions: dict of emotion counts
+    companion: dict-like object (may contain 'name' and 'persona_prompt')
+    emotion_trend: list of {date, valence}
+    top_emotions: dict {emotion: count}
     """
-    comp_name = "Your companion"
-    persona = ""
-    if companion:
-        comp_name = companion.get("name") or comp_name
-        persona = companion.get("persona_prompt") or ""
-    # Provide a short persona if none
+
+    comp_name = companion.get("name", "Your companion") if companion else "Your companion"
+    persona = companion.get("persona_prompt") if (companion and companion.get("persona_prompt")) else ""
+
+    # 默认 persona（增强 DeepSeek-Qwen 生成风格）
     if not persona:
         persona = (
-            f"You are {comp_name}, a warm journaling companion. "
-            "You write in a gentle, empathic tone and provide short supportive messages."
+            f"You are {comp_name}, a warm, supportive emotional journaling companion. "
+            "You speak gently, with emotional sensitivity, never clinical. "
+            "Your tone is encouraging, calming and empathetic."
         )
 
     prompt = f"""
-You are {comp_name}. {persona}
+{persona}
 
-Task:
-Based on the user's recent emotional patterns, write a short, gentle and supportive message in the voice of {comp_name}.
-Keep it 2–4 sentences, warm and encouraging. Avoid generic platitudes and be specific to the emotions provided.
+Your task:
+Write a short supportive message for the user based on their recent emotional patterns.
+
+Guidelines:
+- 2–4 sentences only.
+- Warm, encouraging, human-like tone.
+- Reference the emotions or patterns implied by the data.
+- Avoid generic statements like “everything will be fine.”
+- No markdown. No JSON. Return plain text only.
 
 Emotional data:
-- Valence trend: {emotion_trend}
-- Top feelings: {top_emotions}
+Valence trend: {emotion_trend}
+Emotion counts: {top_emotions}
 
-Return ONLY plain text (no JSON, no extra commentary).
+Now write the message:
 """
+
     return prompt
 
 
 def generate_summary_message(companion: Optional[Dict[str, Any]], emotion_trend, top_emotions) -> str:
     prompt = build_summary_prompt(companion, emotion_trend, top_emotions)
-    raw = generate_text_with_gemini(prompt)
+    raw = call_siliconflow(prompt)
     return raw.strip()

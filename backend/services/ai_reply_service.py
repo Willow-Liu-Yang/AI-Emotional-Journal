@@ -8,7 +8,10 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from models import JournalEntry, User, AICompanion, AIReply
-from core.ai_client import generate_text_with_gemini
+
+from core.ai_client import call_siliconflow
+
+
 
 
 # 固定六种情绪
@@ -123,13 +126,12 @@ def _extract_json(text: str) -> Dict[str, Any]:
 
 def call_llm_for_reply_and_emotion(prompt: str) -> Dict[str, Any]:
     """
-    调用 Gemini，一次拿到：
     - reply: 字符串
     - emotion: 六选一 or null
     - intensity: 1/2/3 or null
     """
     try:
-        raw = generate_text_with_gemini(prompt)
+        raw = call_siliconflow(prompt)
     except Exception as e:
         # 兜底，避免把底层错误直接抛给前端
         raise HTTPException(status_code=502, detail="AI service unavailable.") from e
@@ -247,7 +249,7 @@ def generate_ai_reply_for_entry(
         companion_id=companion.id,
         reply_type="empathetic_reply_with_emotion",
         content=reply_text,
-        model_name="gemini-structured-v1",  # 你可以换成真实模型名
+        model_name="deepseek-chat-lite",  # 你可以换成真实模型名
     )
     db.add(ai_reply)
 

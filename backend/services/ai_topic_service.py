@@ -1,7 +1,7 @@
 # backend/services/ai_topic_service.py
 
 import json
-from core.ai_client import generate_text_with_gemini
+from core.ai_client import call_siliconflow
 
 
 THEME_LABELS = [
@@ -15,18 +15,18 @@ def build_theme_prompt(content: str) -> str:
     return f"""
 You are an assistant that analyzes personal journal entries.
 
-Your task is to identify the main themes present in the user's journal entry.
-Choose 2–6 themes from the following list:
+Your task is to extract the main themes present in the user's journal entry.
+Choose 2–6 themes from the following predefined list:
 
 {THEME_LABELS}
 
 Rules:
-- Only output themes meaningfully present in the text.
-- Assign each theme a weight between 0 and 1.
+- Only select themes that are meaningfully present.
+- Assign each selected theme a weight between 0 and 1.
 - The weights MUST sum to 1.
-- Return ONLY JSON.
+- Return ONLY valid JSON. No explanations, no markdown.
 
-JSON format example:
+JSON output format:
 {{
   "themes": {{
     "work": 0.4,
@@ -42,11 +42,25 @@ Journal Entry:
 
 def extract_themes(content: str) -> dict:
     prompt = build_theme_prompt(content)
-    raw = generate_text_with_gemini(prompt).strip()
 
-    # 强化 JSON 提取防止 LLM 污染
+    raw = call_siliconflow(prompt).strip()
+
+    # Try direct JSON
     try:
         data = json.loads(raw)
         return data.get("themes", {})
     except:
-        return {}
+        pass
+
+    # Try extracting first {...}
+    import re
+    match = re.search(r"\{.*\}", raw, re.DOTALL)
+    if match:
+        try:
+            data = json.loads(match.group(0))
+            return data.get("themes", {})
+        except:
+            pass
+
+    # Fallback
+    return {}

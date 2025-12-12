@@ -32,7 +32,9 @@ export default function FeelingsSection({ emotions }: Props) {
   const circumference = 2 * Math.PI * radius;
 
   // We'll iterate entries in a stable order: sort by count desc to make large arcs first (optional)
-  const entries = Object.entries(emotions).sort((a, b) => b[1] - a[1]);
+  const entries = Object.entries(emotions)
+  .filter(([_, count]) => count > 0) // 🟢 过滤掉 count 为 0 的情绪
+  .sort((a, b) => b[1] - a[1]);
 
   // cumulative fraction tracker
   let cumulative = 0;

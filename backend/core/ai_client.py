@@ -1,34 +1,47 @@
-# core/ai_client.py
+# backend/core/ai_client.py
 
 import os
-from google import genai
+import requests
+from fastapi import HTTPException
 
-# 1. 从环境变量里拿 key（支持两种名字）
-_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY")
+if not SILICONFLOW_API_KEY:
+    raise RuntimeError("SILICONFLOW_API_KEY is missing in environment!")
 
-if not _API_KEY:
-    # 如果这里触发，说明容器里没传进来 key —— 但你刚才已经验证是有的，所以正常不会走到这里
-    raise RuntimeError(
-        "GEMINI_API_KEY / GOOGLE_API_KEY is not set in environment. "
-        "Please configure it in your .env / docker-compose."
-    )
-
-# 2. ✅ 显式传 api_key，避免“Missing key inputs argument”
-client = genai.Client(api_key=_API_KEY)
+API_URL = "https://api.siliconflow.cn/v1/chat/completions"
+MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"   # ← 新模型名
 
 
-def generate_text_with_gemini(prompt: str, model: str = "gemini-2.5-flash") -> str:
+def call_siliconflow(prompt: str) -> str:
     """
-    调用 Gemini，返回一段纯文本。
+    通用 LLM 调用函数，统一使用 Qwen2.5-7B-Instruct。
     """
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-    )
 
-    text = getattr(response, "text", None)
-    if not text:
-        # 如果需要调试，可以在这里打印 response
-        raise RuntimeError("Empty response from Gemini")
+    headers = {
+        "Authorization": f"Bearer {SILICONFLOW_API_KEY}",
+        "Content-Type": "application/json",
+    }
 
-    return text.strip()
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {"role": "system", "content": "You are a helpful AI assistant."},
+            {"role": "user", "content": prompt},
+        ],
+        # Qwen 最佳温度 0.6（风格柔和、稳定）
+        "temperature": 0.6,
+    }
+
+    try:
+        resp = requests.post(API_URL, json=payload, headers=headers, timeout=60)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"SiliconFlow unreachable: {e}")
+
+    if resp.status_code != 200:
+        raise RuntimeError(f"SiliconFlow API error {resp.status_code}: {resp.text}")
+
+    data = resp.json()
+    try:
+        return data["choices"][0]["message"]["content"].strip()
+    except:
+        return ""
