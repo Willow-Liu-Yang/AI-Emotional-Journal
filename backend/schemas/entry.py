@@ -6,7 +6,7 @@ from typing import Optional, Literal, Dict
 # -------------------------------
 # 主题类型（主主题）
 # -------------------------------
-EntryTheme = Literal["job", "hobbies", "social", "other"]
+EntryTheme = Literal["work", "hobbies", "social", "other"]
 
 
 # -------------------------------
@@ -44,7 +44,7 @@ class EntrySummary(BaseModel):
     created_at: datetime
     emotion: Optional[str]
 
-    # ✅ 新增：主主题
+    # ✅ 主主题
     primary_theme: Optional[EntryTheme] = None
 
     class Config:
@@ -64,11 +64,11 @@ class EntryOut(BaseModel):
     emotion: Optional[str]
     emotion_intensity: Optional[int]
 
-    # ✅ 新增：主主题（快速展示/筛选）
+    # ✅ 主主题（快速展示/筛选）
     primary_theme: Optional[EntryTheme] = None
 
-    # ✅ 新增：主题权重分布（insights 聚合用）
-    # 形如：{"job":0.2,"hobbies":0.5,"social":0.1,"other":0.2}
+    # ✅ 主题权重分布（insights 聚合用）
+    # 形如：{"work":0.2,"hobbies":0.5,"social":0.1,"other":0.2}
     theme_scores: Optional[Dict[str, float]] = None
 
     # ✅ 现在是对象，而不是字符串

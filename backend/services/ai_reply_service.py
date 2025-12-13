@@ -14,9 +14,9 @@ from core.ai_client import call_siliconflow
 # 固定六种情绪
 VALID_EMOTIONS = {"joy", "calm", "tired", "anxiety", "sadness", "anger"}
 
-# 固定四类主题（MVP）
-VALID_THEMES = {"job", "hobbies", "social", "other"}
-THEME_KEYS_ORDER = ["job", "hobbies", "social", "other"]
+# 固定四类主题（MVP）— ✅ work/hobbies/social/other
+VALID_THEMES = {"work", "hobbies", "social", "other"}
+THEME_KEYS_ORDER = ["work", "hobbies", "social", "other"]
 
 
 def _get_companion_or_default(db: Session, current_user: User) -> AICompanion:
@@ -92,11 +92,11 @@ Emotion classification:
 
 Theme classification (IMPORTANT):
 - Provide theme_scores as a JSON object with exactly these keys:
-  "job", "hobbies", "social", "other"
+  "work", "hobbies", "social", "other"
 - Each value should be a number between 0 and 1.
 - The sum should be approximately 1.0.
 - If unsure, put more weight into "other".
-- Optionally provide primary_theme as one of: "job" | "hobbies" | "social" | "other".
+- Optionally provide primary_theme as one of: "work" | "hobbies" | "social" | "other".
 
 OUTPUT FORMAT (VERY IMPORTANT):
 Return ONLY a single JSON object, in this exact structure, with no extra commentary:
@@ -106,12 +106,12 @@ Return ONLY a single JSON object, in this exact structure, with no extra comment
   "emotion": "joy | calm | tired | anxiety | sadness | anger | null",
   "intensity": 1,
   "theme_scores": {{
-    "job": 0.0,
+    "work": 0.0,
     "hobbies": 0.0,
     "social": 0.0,
     "other": 1.0
   }},
-  "primary_theme": "job | hobbies | social | other | null"
+  "primary_theme": "work | hobbies | social | other | null"
 }}
 
 Do not write any other text outside this JSON.
@@ -159,7 +159,7 @@ def _extract_json(text: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # 完全失败：退化为只有 reply
+    # 完全失败：退化
     return {
         "reply": text,
         "emotion": None,
@@ -200,7 +200,7 @@ def _clean_and_normalize_theme_scores(raw_scores: Any) -> Tuple[Optional[Dict[st
 
     total = sum(scores.values())
     if total <= 0:
-        scores = {"job": 0.0, "hobbies": 0.0, "social": 0.0, "other": 1.0}
+        scores = {"work": 0.0, "hobbies": 0.0, "social": 0.0, "other": 1.0}
         return scores, "other"
 
     # 归一化
@@ -261,9 +261,10 @@ def call_llm_for_reply_emotion_and_theme(prompt: str) -> Dict[str, Any]:
 
     data = _extract_json(raw)
 
-    reply = (data.get("reply") or "").strip()
+    reply = data.get("reply")
     if reply is None:
         reply = ""
+    reply = str(reply).strip()
 
     emotion = _clean_emotion(data.get("emotion"))
     intensity = _clean_intensity(data.get("intensity"))
@@ -292,14 +293,12 @@ def _apply_analysis_to_entry(
 ) -> None:
     """
     把 AI 分析结果写回 entry。
-    说明：JournalEntry 必须有 theme_scores / primary_theme 两列（JSON / String 等）。
     """
     if emotion:
         entry.emotion = emotion
     if intensity:
         entry.emotion_intensity = intensity
 
-    # 主题建议：如果拿到了 theme_scores，就覆盖（保持最新）；拿不到就不动
     if theme_scores is not None:
         entry.theme_scores = theme_scores
     if primary_theme:
@@ -314,7 +313,7 @@ def analyze_entry_for_entry(
 ) -> JournalEntry:
     """
     只做分析（emotion/intensity/theme），不生成 AIReply。
-    - 默认：如果 entry 已经有 emotion/theme_scores 且不强制，直接返回（避免重复调用 LLM）
+    - 默认：如果 entry 已经有分析 且不强制，直接返回
     - force_regenerate=True：重新分析并覆盖
     """
     entry: Optional[JournalEntry] = (
@@ -358,14 +357,8 @@ def generate_ai_reply_for_entry(
     force_regenerate: bool = False,
 ) -> AIReply:
     """
-    给某一篇日记生成（或获取已有的）AI 回复 + 情绪分析 + 主题分析。
-
-    - 确保这篇日记属于当前用户
-    - 默认：如果已经有 ai_reply，就直接返回旧的（不重复生成）
-    - force_regenerate=True 时，会删除旧的、重新生成一条
-    - emotion / intensity / theme_* 视为纯 AI 字段：每次生成时用最新结果覆盖旧值
+    生成 AI 回复 + 分析（emotion/intensity/theme）。
     """
-
     entry: Optional[JournalEntry] = (
         db.query(JournalEntry)
         .filter(
@@ -378,13 +371,11 @@ def generate_ai_reply_for_entry(
     if not entry:
         raise HTTPException(status_code=404, detail="Journal entry not found")
 
-    # 如果已经有一条回复，而且不强制重生，直接返回
     if entry.ai_reply and not force_regenerate:
         return entry.ai_reply
 
     companion = _get_companion_or_default(db, current_user)
 
-    # 一次拿 reply + emotion + intensity + theme
     prompt = build_prompt_for_entry(entry, companion, analysis_only=False)
     result = call_llm_for_reply_emotion_and_theme(prompt)
 
@@ -398,7 +389,6 @@ def generate_ai_reply_for_entry(
         primary_theme=result["primary_theme"],
     )
 
-    # 如果之前已经有 AIReply，删掉旧的
     if entry.ai_reply:
         db.delete(entry.ai_reply)
         db.flush()

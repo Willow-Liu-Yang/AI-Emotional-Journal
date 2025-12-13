@@ -74,11 +74,9 @@ def create_entry(
         content=entry.content,
         summary=generate_summary(entry.content),
 
-        # 这里一开始都设为 None，后面 AI 会更新
         emotion=None,
         emotion_intensity=None,
 
-        # 主题字段（若已加列）
         primary_theme=None,
         theme_scores=None,
 
@@ -86,25 +84,32 @@ def create_entry(
     )
 
     db.add(new_entry)
-    db.flush()  # 拿到 id（created_at 由 DB default 写入）
+    db.flush()  # 先拿到 new_entry.id（同一个 Session 内可被后续 service 查询到）
 
-    # ✅ 关键：不选 AI 回复也要做分析；选了则生成回复 + 分析
-    if entry.need_ai_reply:
-        generate_ai_reply_for_entry(
-            db=db,
-            entry_id=new_entry.id,
-            current_user=current_user,
-            force_regenerate=False,
-        )
-    else:
-        analyze_entry_for_entry(
-            db=db,
-            entry_id=new_entry.id,
-            current_user=current_user,
-            force_regenerate=False,
-        )
+    try:
+        # ✅ 不选 AI 回复也要做分析；选了则生成回复 + 分析
+        if entry.need_ai_reply:
+            generate_ai_reply_for_entry(
+                db=db,
+                entry_id=new_entry.id,
+                current_user=current_user,
+                force_regenerate=False,
+            )
+        else:
+            analyze_entry_for_entry(
+                db=db,
+                entry_id=new_entry.id,
+                current_user=current_user,
+                force_regenerate=False,
+            )
 
-    # 注意：上面两个 service 内部已经 commit 过，这里只 refresh
+        # ✅ 统一在这里 commit：无论 service 内部是否 commit，这里再 commit 一次都安全
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
+
     db.refresh(new_entry)
     return EntryOut.model_validate(new_entry, from_attributes=True)
 
@@ -148,15 +153,8 @@ def get_entries(
     # 即筛选 [from_date 00:00Z, to_date+1day 00:00Z)
     # ----------------------------
     if from_date or to_date:
-        if from_date:
-            start = _parse_date_ymd_to_utc_start(from_date)
-        else:
-            start = None
-
-        if to_date:
-            end = _parse_date_ymd_to_utc_start(to_date) + timedelta(days=1)
-        else:
-            end = None
+        start = _parse_date_ymd_to_utc_start(from_date) if from_date else None
+        end = (_parse_date_ymd_to_utc_start(to_date) + timedelta(days=1)) if to_date else None
 
         if start and end and start >= end:
             raise HTTPException(status_code=400, detail="Invalid date range")
@@ -211,6 +209,10 @@ def create_ai_reply_for_entry_endpoint(
         current_user=current_user,
         force_regenerate=force_regenerate,
     )
+
+    # 这里也统一 commit 一次，避免 service 是否 commit 的不确定性
+    db.commit()
+    db.refresh(ai_reply)
 
     return AIReplyOut.model_validate(ai_reply, from_attributes=True)
 

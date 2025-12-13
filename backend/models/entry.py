@@ -2,18 +2,16 @@ from sqlalchemy import (
     Column,
     Integer,
     Text,
-    TIMESTAMP,
     func,
     String,
     Boolean,
     ForeignKey,
-    JSON,   # ✅ 新增
+    JSON,
 )
 from sqlalchemy.orm import relationship
-from database import Base
 from sqlalchemy import DateTime
 
-
+from database import Base
 
 
 class JournalEntry(Base):
@@ -31,7 +29,7 @@ class JournalEntry(Base):
     # 摘要（列表页显示）
     summary = Column(String(300), nullable=True)
 
-    # 创建时间
+    # 创建时间（UTC + tz-aware）
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # 情绪（六选一）
@@ -40,12 +38,12 @@ class JournalEntry(Base):
     # 情绪强度：1=低, 2=中, 3=高
     emotion_intensity = Column(Integer, nullable=True)
 
-    # ✅ 新增：主主题（用于列表/筛选/快速展示）
-    # 值建议限定为：job / hobbies / social / other
+    # ✅ 主主题（用于列表/筛选/快速展示）
+    # 值限定为：work / hobbies / social / other
     primary_theme = Column(String(20), nullable=True)
 
-    # ✅ 新增：主题权重分布（用于 insights 聚合）
-    # 形如：{"job":0.2,"hobbies":0.5,"social":0.1,"other":0.2}
+    # ✅ 主题权重分布（用于 insights 聚合）
+    # 形如：{"work":0.2,"hobbies":0.5,"social":0.1,"other":0.2}
     theme_scores = Column(JSON, nullable=True)
 
     # ✅ 不再直接存文本回复，而是通过关系访问 AIReply
@@ -88,4 +86,3 @@ class JournalEntry(Base):
 
         weight = intensity_weight.get(self.emotion_intensity, 1.0)
         return round(base * weight, 2)
-
