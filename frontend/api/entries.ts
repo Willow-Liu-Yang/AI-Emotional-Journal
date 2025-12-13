@@ -3,6 +3,8 @@ import { apiRequest } from "./index";
 
 // ============== 类型定义 ==============
 
+export type EntryTheme = "job" | "hobbies" | "social" | "other";
+
 // 后端 AIReplyOut 映射
 export interface AIReply {
   id: number;
@@ -20,6 +22,9 @@ export interface EntrySummary {
   summary: string;
   created_at: string;
   emotion?: string | null;
+
+  // ✅ 新增：主主题（列表页可用于展示/筛选）
+  primary_theme?: EntryTheme | null;
 }
 
 // 后端 EntryOut 映射（详情用）
@@ -29,9 +34,17 @@ export interface Entry {
   content: string;
   summary: string | null;
   created_at: string;
+
   emotion?: string | null;
   emotion_intensity?: number | null;
-  ai_reply?: AIReply | null;   // ⭐ 现在是对象，不是 string 了
+
+  // ✅ 新增：主主题 + 主题分布（insights 聚合用）
+  primary_theme?: EntryTheme | null;
+  theme_scores?: Record<EntryTheme, number> | null;
+
+  // ⭐ 现在是对象，不是 string 了
+  ai_reply?: AIReply | null;
+
   pleasure: number;
 }
 
@@ -40,7 +53,7 @@ export interface EntryComment {
   id: number;
   content: string;
   created_at: string;
-  author_name?: string | null; // CommentOut 里如果有就用，没有也没关系
+  author_name?: string | null;
 }
 
 export const entriesApi = {
@@ -57,37 +70,28 @@ export const entriesApi = {
     if (params?.to_date) query.append("to_date", params.to_date);
 
     const qs = query.toString();
+    // ✅ 保持带尾斜杠，避免重定向导致 Authorization header 丢失
     const url = qs ? `/entries/?${qs}` : "/entries/";
 
-    return apiRequest(url, {
-      method: "GET",
-    });
+    return apiRequest(url, { method: "GET" });
   },
 
   /** Get single entry by ID */
   async getOne(id: number): Promise<Entry> {
-    return apiRequest(`/entries/${id}`, {
-      method: "GET",
-    });
+    return apiRequest(`/entries/${id}`, { method: "GET" });
   },
 
   /** Create new journal entry */
-  async create(payload: {
-    content: string;
-    need_ai_reply: boolean;
-  }) {
+  async create(payload: { content: string; need_ai_reply: boolean }): Promise<Entry> {
     return apiRequest("/entries/", {
       method: "POST",
       body: JSON.stringify(payload),
     });
   },
 
-
   /** Soft delete entry */
   async remove(id: number) {
-    return apiRequest(`/entries/${id}`, {
-      method: "DELETE",
-    });
+    return apiRequest(`/entries/${id}`, { method: "DELETE" });
   },
 
   // ===============================
@@ -100,9 +104,7 @@ export const entriesApi = {
     options?: { forceRegenerate?: boolean }
   ): Promise<AIReply> {
     const force = options?.forceRegenerate ? "?force_regenerate=true" : "";
-    return apiRequest(`/entries/${entryId}/ai_reply${force}`, {
-      method: "POST",
-    });
+    return apiRequest(`/entries/${entryId}/ai_reply${force}`, { method: "POST" });
   },
 
   // ===============================
@@ -111,9 +113,7 @@ export const entriesApi = {
 
   /** 获取某条日记下的所有留言（按时间升序） */
   async getComments(entryId: number): Promise<EntryComment[]> {
-    return apiRequest(`/entries/${entryId}/comments/`, {
-      method: "GET",
-    });
+    return apiRequest(`/entries/${entryId}/comments/`, { method: "GET" });
   },
 
   /** 给某条日记添加一条留言（自己对自己的 note） */

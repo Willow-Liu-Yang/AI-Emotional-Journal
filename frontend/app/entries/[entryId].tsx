@@ -17,63 +17,33 @@ import {
 } from "react-native";
 
 import { entriesApi } from "@/api/entries";
-
-type EntryDetail = {
-  id: number;
-  content: string;
-  created_at: string;
-  emotion: string | null;
-  emotion_intensity: number | null; // 1 / 2 / 3
-  pleasure: number | null;
-
-  // 来自后端的 AIReply 对象
-  ai_reply?:
-    | {
-        id: number;
-        entry_id: number;
-        companion_id: number;
-        reply_type: string;
-        content: string;
-        model_name?: string | null;
-        created_at: string;
-      }
-    | null;
-};
-
-type Comment = {
-  id: number;
-  content: string;
-  created_at: string;
-  author_name?: string | null;
-};
+import type { Entry, EntryComment } from "@/api/entries";
 
 // 根据 companion_id 映射头像 + 名字 + 副标题
-const COMPANION_UI: Record<
-  number,
-  { name: string; subtitle: string; avatar: any }
-> = {
-  1: {
-    name: "Luna",
-    subtitle: "Warmly listening",
-    avatar: require("@/assets/images/profile/luna.png"),
-  },
-  2: {
-    name: "Sol",
-    subtitle: "Bright encouragement",
-    avatar: require("@/assets/images/profile/sol.png"),
-  },
-  3: {
-    name: "Terra",
-    subtitle: "Steady grounding",
-    avatar: require("@/assets/images/profile/terra.png"),
-  },
-};
+const COMPANION_UI: Record<number, { name: string; subtitle: string; avatar: any }> =
+  {
+    1: {
+      name: "Luna",
+      subtitle: "Warmly listening",
+      avatar: require("@/assets/images/profile/luna.png"),
+    },
+    2: {
+      name: "Sol",
+      subtitle: "Bright encouragement",
+      avatar: require("@/assets/images/profile/sol.png"),
+    },
+    3: {
+      name: "Terra",
+      subtitle: "Steady grounding",
+      avatar: require("@/assets/images/profile/terra.png"),
+    },
+  };
 
 export default function EntryDetailScreen() {
   const router = useRouter();
   const { entryId } = useLocalSearchParams<{ entryId?: string }>();
 
-  const [entry, setEntry] = useState<EntryDetail | null>(null);
+  const [entry, setEntry] = useState<Entry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,7 +53,7 @@ export default function EntryDetailScreen() {
   const [reflection, setReflection] = useState("");
   const [sending, setSending] = useState(false);
 
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<EntryComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
 
   // 发送按钮缩放动画
@@ -116,7 +86,7 @@ export default function EntryDetailScreen() {
       try {
         setLoading(true);
         const data = await entriesApi.getOne(Number(entryId));
-        if (active) setEntry(data as EntryDetail);
+        if (active) setEntry(data);
       } catch (e: any) {
         if (active) setError(e?.message || "Failed to load entry.");
       } finally {
@@ -158,10 +128,7 @@ export default function EntryDetailScreen() {
 
     try {
       setSending(true);
-      const newComment: Comment = await entriesApi.addComment(
-        Number(entryId),
-        text
-      );
+      const newComment = await entriesApi.addComment(Number(entryId), text);
       setComments((prev) => [...prev, newComment]);
       setReflection("");
     } catch (e: any) {
@@ -218,25 +185,21 @@ export default function EntryDetailScreen() {
 
   const handleDeletePress = () => {
     if (!entry) return;
-    Alert.alert(
-      "Delete entry",
-      "Are you sure you want to delete this entry?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await entriesApi.remove(entry.id); // 软删除
-              router.back();
-            } catch (e: any) {
-              Alert.alert("Error", e?.message || "Failed to delete entry.");
-            }
-          },
+    Alert.alert("Delete entry", "Are you sure you want to delete this entry?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await entriesApi.remove(entry.id); // 软删除
+            router.back();
+          } catch (e: any) {
+            Alert.alert("Error", e?.message || "Failed to delete entry.");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleMenuPress = () => {
@@ -308,9 +271,7 @@ export default function EntryDetailScreen() {
                   </View>
                   <View>
                     <Text style={styles.aiName}>{companionUI.name}</Text>
-                    <Text style={styles.aiSubtitle}>
-                      {companionUI.subtitle}
-                    </Text>
+                    <Text style={styles.aiSubtitle}>{companionUI.subtitle}</Text>
                   </View>
                 </View>
                 <Text style={styles.aiText}>{entry.ai_reply.content}</Text>
@@ -342,8 +303,8 @@ export default function EntryDetailScreen() {
                   />
                   <Text style={styles.moodLine}>
                     {formatEmotionWithIntensity(
-                      entry.emotion,
-                      entry.emotion_intensity
+                      entry.emotion ?? null,
+                      entry.emotion_intensity ?? null
                     )}
                   </Text>
                 </View>
@@ -411,8 +372,7 @@ function formatEmotionWithIntensity(
 ): string {
   if (!emotion) return "No emotion detected yet";
 
-  const base =
-    emotion.charAt(0).toUpperCase() + emotion.slice(1).toLowerCase();
+  const base = emotion.charAt(0).toUpperCase() + emotion.slice(1).toLowerCase();
 
   if (!intensity) return base;
 
@@ -429,7 +389,7 @@ function CommentCard({
   comment,
   onDelete,
 }: {
-  comment: Comment;
+  comment: EntryComment;
   onDelete: () => void;
 }) {
   const created = new Date(comment.created_at);

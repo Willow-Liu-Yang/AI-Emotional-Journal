@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from database import get_db
 from core.auth import get_current_user
@@ -23,9 +23,43 @@ def generate_summary(content: str) -> str:
     return content[:200].strip()
 
 
+def _parse_date_ymd_to_utc_start(date_str: str) -> datetime:
+    """
+    解析 YYYY-MM-DD，返回 UTC 的当天起始时间（00:00:00Z）。
+    """
+    try:
+        d = datetime.fromisoformat(date_str).date()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+    return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+
+
+def _parse_month_ym_to_utc_range(month_str: str) -> tuple[datetime, datetime]:
+    """
+    解析 YYYY-MM，返回该月的 [start, end)（UTC）。
+    """
+    try:
+        year_str, month_str2 = month_str.split("-")
+        year = int(year_str)
+        month = int(month_str2)
+        if month < 1 or month > 12:
+            raise ValueError
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+
+    start = datetime(year, month, 1, tzinfo=timezone.utc)
+    if month == 12:
+        end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        end = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+
+    return start, end
+
+
 # ------------------------------------------------
 # POST /entries —— 创建日记
-# ✅ 情绪 & 强度由 AI 自动写入，不再从前端传
+# 情绪 & 强度由 AI 自动写入，不再从前端传
+# created_at 由 DB server_default 统一写入（UTC + tz-aware）
 # ------------------------------------------------
 @router.post("/", response_model=EntryOut)
 def create_entry(
@@ -37,17 +71,21 @@ def create_entry(
         user_id=current_user.id,
         content=entry.content,
         summary=generate_summary(entry.content),
-        created_at=datetime.utcnow(),
+
         # 这里一开始都设为 None，后面 AI 会更新
         emotion=None,
         emotion_intensity=None,
+
+        # 主题字段（若已加列）
+        primary_theme=None,
+        theme_scores=None,
+
         deleted=False,
     )
 
     db.add(new_entry)
-    db.flush()  # 先拿到 new_entry.id，但还没提交事务
+    db.flush()  # 拿到 id（created_at 由 DB default 写入）
 
-    # 如果需要 AI 回复，调用 service 生成一条 AIReply（会顺便写入 emotion / intensity）
     if entry.need_ai_reply:
         generate_ai_reply_for_entry(
             db=db,
@@ -59,7 +97,6 @@ def create_entry(
     db.commit()
     db.refresh(new_entry)
 
-    # 直接让 Pydantic 从 ORM 对象读取属性（包含 pleasure 属性和 ai_reply 关系）
     return EntryOut.model_validate(new_entry, from_attributes=True)
 
 
@@ -79,44 +116,50 @@ def get_entries(
         JournalEntry.deleted == False,
     )
 
+    # ----------------------------
     # 按年月或日期筛选
+    # ----------------------------
     if date:
-        try:
-            if len(date) == 7:  # YYYY-MM
-                year, month = date.split("-")
-                start = datetime(int(year), int(month), 1)
-                month_int = int(month)
-
-                if month_int == 12:
-                    end = datetime(int(year) + 1, 1, 1)
-                else:
-                    end = datetime(int(year), month_int + 1, 1)
-            else:  # YYYY-MM-DD
-                start = datetime.fromisoformat(date)
-                end = start.replace(hour=23, minute=59, second=59)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid date format")
+        if len(date) == 7:  # YYYY-MM
+            start, end = _parse_month_ym_to_utc_range(date)
+        else:  # YYYY-MM-DD
+            start = _parse_date_ymd_to_utc_start(date)
+            end = start + timedelta(days=1)
 
         query = query.filter(
             JournalEntry.created_at >= start,
             JournalEntry.created_at < end,
         )
 
-    # 时间区间
-    if from_date and to_date:
-        try:
-            start = datetime.fromisoformat(from_date)
-            end = datetime.fromisoformat(to_date)
-        except Exception:
+    # ----------------------------
+    # 时间区间筛选（UTC-aware，使用半开区间）
+    # 约定：
+    # - from_date: YYYY-MM-DD（包含当天）
+    # - to_date:   YYYY-MM-DD（包含当天）
+    # 即筛选 [from_date 00:00Z, to_date+1day 00:00Z)
+    # ----------------------------
+    if from_date or to_date:
+        if from_date:
+            start = _parse_date_ymd_to_utc_start(from_date)
+        else:
+            # 没给 from_date 就不设下界
+            start = None
+
+        if to_date:
+            end = _parse_date_ymd_to_utc_start(to_date) + timedelta(days=1)
+        else:
+            # 没给 to_date 就不设上界
+            end = None
+
+        if start and end and start >= end:
             raise HTTPException(status_code=400, detail="Invalid date range")
 
-        query = query.filter(
-            JournalEntry.created_at >= start,
-            JournalEntry.created_at <= end,
-        )
+        if start is not None:
+            query = query.filter(JournalEntry.created_at >= start)
+        if end is not None:
+            query = query.filter(JournalEntry.created_at < end)
 
     entries = query.order_by(JournalEntry.created_at.desc()).all()
-
     return [EntrySummary.model_validate(e, from_attributes=True) for e in entries]
 
 
@@ -155,13 +198,6 @@ def create_ai_reply_for_entry_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    对指定的日记生成一条 AI 回复。
-
-    - 默认：如果已经存在 AIReply，就直接返回旧的
-    - force_regenerate=True：会删除旧记录，重新调用 LLM 生成
-    - 同时会刷新该日记的 emotion / emotion_intensity
-    """
     ai_reply = generate_ai_reply_for_entry(
         db=db,
         entry_id=entry_id,
@@ -169,7 +205,6 @@ def create_ai_reply_for_entry_endpoint(
         force_regenerate=force_regenerate,
     )
 
-    # 这里不再额外 db.commit()，service 里已经 commit & refresh 过了
     return AIReplyOut.model_validate(ai_reply, from_attributes=True)
 
 

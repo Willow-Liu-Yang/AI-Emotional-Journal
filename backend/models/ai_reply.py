@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, fun
 from sqlalchemy.orm import relationship
 
 from database import Base
-
+from sqlalchemy import DateTime
 
 class AIReply(Base):
     __tablename__ = "ai_replies"
@@ -48,11 +48,8 @@ class AIReply(Base):
     model_name = Column(String(100), nullable=True)
 
     # 创建时间
-    created_at = Column(
-        TIMESTAMP(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
 
     # ------------ 关系 ------------
     entry = relationship("JournalEntry", back_populates="ai_reply")

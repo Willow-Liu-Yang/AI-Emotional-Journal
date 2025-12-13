@@ -1,8 +1,12 @@
-# backend/schemas/entry.py
-
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal, Dict
+
+
+# -------------------------------
+# 主题类型（主主题）
+# -------------------------------
+EntryTheme = Literal["job", "hobbies", "social", "other"]
 
 
 # -------------------------------
@@ -23,7 +27,8 @@ class AIReplyOut(BaseModel):
 
 # -------------------------------
 # 创建日记（前端输入）
-# ✅ 现在只需要 content + 是否需要 AI 回复
+# ✅ 只需要 content + 是否需要 AI 回复
+# 主题由后端分析生成，不从前端传入
 # -------------------------------
 class EntryCreate(BaseModel):
     content: str
@@ -38,6 +43,9 @@ class EntrySummary(BaseModel):
     summary: str
     created_at: datetime
     emotion: Optional[str]
+
+    # ✅ 新增：主主题
+    primary_theme: Optional[EntryTheme] = None
 
     class Config:
         from_attributes = True
@@ -55,6 +63,13 @@ class EntryOut(BaseModel):
 
     emotion: Optional[str]
     emotion_intensity: Optional[int]
+
+    # ✅ 新增：主主题（快速展示/筛选）
+    primary_theme: Optional[EntryTheme] = None
+
+    # ✅ 新增：主题权重分布（insights 聚合用）
+    # 形如：{"job":0.2,"hobbies":0.5,"social":0.1,"other":0.2}
+    theme_scores: Optional[Dict[str, float]] = None
 
     # ✅ 现在是对象，而不是字符串
     ai_reply: Optional[AIReplyOut] = None

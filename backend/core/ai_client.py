@@ -8,7 +8,7 @@ SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY")
 if not SILICONFLOW_API_KEY:
     raise RuntimeError("SILICONFLOW_API_KEY is missing in environment!")
 
-API_URL = "https://api.siliconflow.cn/v1/chat/completions"
+API_URL = "https://api.siliconflow.com/v1/chat/completions"
 MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"   # ← 新模型名
 
 
