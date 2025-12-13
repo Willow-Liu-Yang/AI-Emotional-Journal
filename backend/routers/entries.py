@@ -7,7 +7,7 @@ from core.auth import get_current_user
 
 from models import JournalEntry, User
 from schemas import EntryCreate, EntryOut, EntrySummary, AIReplyOut
-from services.ai_reply_service import generate_ai_reply_for_entry
+from services.ai_reply_service import generate_ai_reply_for_entry, analyze_entry_for_entry
 
 
 router = APIRouter(
@@ -58,8 +58,10 @@ def _parse_month_ym_to_utc_range(month_str: str) -> tuple[datetime, datetime]:
 
 # ------------------------------------------------
 # POST /entries —— 创建日记
-# 情绪 & 强度由 AI 自动写入，不再从前端传
-# created_at 由 DB server_default 统一写入（UTC + tz-aware）
+# 规则：
+# - 无论 need_ai_reply 是否为 True，都要生成分析字段（emotion/theme 写入 DB）
+# - 只有 need_ai_reply=True 才会创建 AIReply
+# - created_at 由 DB server_default 统一写入（UTC + tz-aware）
 # ------------------------------------------------
 @router.post("/", response_model=EntryOut)
 def create_entry(
@@ -86,6 +88,7 @@ def create_entry(
     db.add(new_entry)
     db.flush()  # 拿到 id（created_at 由 DB default 写入）
 
+    # ✅ 关键：不选 AI 回复也要做分析；选了则生成回复 + 分析
     if entry.need_ai_reply:
         generate_ai_reply_for_entry(
             db=db,
@@ -93,10 +96,16 @@ def create_entry(
             current_user=current_user,
             force_regenerate=False,
         )
+    else:
+        analyze_entry_for_entry(
+            db=db,
+            entry_id=new_entry.id,
+            current_user=current_user,
+            force_regenerate=False,
+        )
 
-    db.commit()
+    # 注意：上面两个 service 内部已经 commit 过，这里只 refresh
     db.refresh(new_entry)
-
     return EntryOut.model_validate(new_entry, from_attributes=True)
 
 
@@ -142,13 +151,11 @@ def get_entries(
         if from_date:
             start = _parse_date_ymd_to_utc_start(from_date)
         else:
-            # 没给 from_date 就不设下界
             start = None
 
         if to_date:
             end = _parse_date_ymd_to_utc_start(to_date) + timedelta(days=1)
         else:
-            # 没给 to_date 就不设上界
             end = None
 
         if start and end and start >= end:

@@ -40,7 +40,9 @@ export interface Entry {
 
   // ✅ 新增：主主题 + 主题分布（insights 聚合用）
   primary_theme?: EntryTheme | null;
-  theme_scores?: Record<EntryTheme, number> | null;
+
+  // ✅ 更稳：允许缺少某些 key（历史数据 / fallback）
+  theme_scores?: Partial<Record<EntryTheme, number>> | null;
 
   // ⭐ 现在是对象，不是 string 了
   ai_reply?: AIReply | null;
