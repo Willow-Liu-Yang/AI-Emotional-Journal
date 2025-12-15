@@ -58,9 +58,7 @@ export default function MainPage() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.greeting}>
-        Good morning, {username || "friend"}.
-      </Text>
+      <Text style={styles.greeting}>Good morning, {username || "friend"}.</Text>
 
       <Image
         source={require("@/assets/images/login/bear.png")}
@@ -68,18 +66,18 @@ export default function MainPage() {
         resizeMode="contain"
       />
 
-      {/* Ready + See All */}
-      <View style={styles.promptHeader}>
-        <Text style={styles.promptText}>
-          Ready to float with your thoughts?
+      {/* ✅ 居中一句话：Need... + See all */}
+      <View style={styles.promptHeaderCentered}>
+        <Text style={styles.promptLine}>
+          Need a prompt to start?
+          <Text
+            style={styles.promptLink}
+            onPress={() => router.push("/promptLibrary")}
+          >
+            {" "}
+            See all &gt;
+          </Text>
         </Text>
-
-        <TouchableOpacity
-          style={styles.seeAllButton}
-          onPress={() => router.push("/promptLibrary")}
-        >
-          <Text style={styles.seeAll}>See All &gt;</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Prompt 卡片轮播 */}
@@ -101,7 +99,6 @@ export default function MainPage() {
           scrollEventThrottle={16}
           style={styles.carousel}
         >
-          {/* 1 Capture Joy */}
           <View style={{ width: CARD_WIDTH }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/capture_joy.png")}
@@ -117,7 +114,6 @@ export default function MainPage() {
             />
           </View>
 
-          {/* 2 Let It Out */}
           <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/let_it_out.png")}
@@ -133,7 +129,6 @@ export default function MainPage() {
             />
           </View>
 
-          {/* 3 Steps Forward */}
           <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/steps_forward.png")}
@@ -172,9 +167,6 @@ export default function MainPage() {
   );
 }
 
-//
-// ─── Styles ─────────────────────────────
-//
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -207,35 +199,38 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
+  // ✅ 图片更大 + 给下面留出空间（让下面部分“更靠下”）
   capyImage: {
     width: "100%",
-    height: 180,
-    marginTop: 4,
+    height: 270,
+    marginTop: 6,
+    marginBottom: 10,
   },
 
-  promptHeader: {
+  // ✅ 这一段整体下移，并居中
+  promptHeaderCentered: {
     paddingHorizontal: 22,
-    marginTop: 8,
+    marginTop: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  promptText: {
+  promptLine: {
     fontSize: 15,
     color: "#7A6A54",
+    textAlign: "center",
   },
-  seeAllButton: {
-    alignSelf: "flex-end",
-    marginTop: 4,
-  },
-  seeAll: {
+  promptLink: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#4A3828",
     textDecorationLine: "underline",
   },
 
+  // ✅ 继续保持 dots 有一点距离
   carouselWrapper: {
-    marginTop: 8,
-    height: 200,
+    marginTop: 14,
     position: "relative",
+    paddingBottom: 28,
   },
   carousel: {
     flexGrow: 0,
@@ -245,7 +240,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 8,
+    bottom: 6,
     flexDirection: "row",
     justifyContent: "center",
   },
@@ -267,7 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginHorizontal: 22,
-    marginTop: 12,
+    marginTop: 14,
   },
   writeBtnText: {
     color: "#fff",
