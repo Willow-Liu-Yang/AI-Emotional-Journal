@@ -1,4 +1,4 @@
-// app/write.tsx
+// app/entries/write.tsx
 
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -28,7 +28,6 @@ const EDITOR_HEIGHT_NO_PROMPT = SCREEN_HEIGHT * 0.40;
 // 有 prompt 时输入区 ~33% 屏幕
 const EDITOR_HEIGHT_WITH_PROMPT = SCREEN_HEIGHT * 0.33;
 
-
 // ===== prompt 数据 =====
 const PROMPTS: Record<string, { icon: any; text: string }> = {
   capture_joy: {
@@ -45,13 +44,11 @@ const PROMPTS: Record<string, { icon: any; text: string }> = {
   },
 };
 
-
 export default function WriteScreen() {
   const router = useRouter();
 
   // 首页传过来的 promptKey
   const { promptKey } = useLocalSearchParams<{ promptKey?: string }>();
-
   const promptData = promptKey ? PROMPTS[promptKey] : null;
 
   const [content, setContent] = useState("");
@@ -92,10 +89,11 @@ export default function WriteScreen() {
 
     try {
       setLoading(true);
+
+      // ✅ 关键修复：后端不再接收 emotion / emotion_intensity
+      // 只传 content + need_ai_reply
       await entriesApi.create({
         content,
-        emotion: "neutral",
-        emotion_intensity: 2,
         need_ai_reply: needAI,
       });
 
@@ -114,7 +112,6 @@ export default function WriteScreen() {
       day: "numeric",
     })
     .toUpperCase();
-
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F2E4D2" }}>
@@ -144,9 +141,7 @@ export default function WriteScreen() {
           style={[
             styles.editorCard,
             {
-              height: promptData
-                ? EDITOR_HEIGHT_WITH_PROMPT  // 有 prompt → 稍微变矮
-                : EDITOR_HEIGHT_NO_PROMPT,   // 无 prompt → 更高
+              height: promptData ? EDITOR_HEIGHT_WITH_PROMPT : EDITOR_HEIGHT_NO_PROMPT,
             },
           ]}
         >
@@ -155,7 +150,7 @@ export default function WriteScreen() {
             placeholder="Write about your day..."
             placeholderTextColor="#B08663"
             multiline
-            scrollEnabled={true}   // ★ 内部滚动
+            scrollEnabled={true} // ★ 内部滚动
             value={content}
             onChangeText={setContent}
             textAlignVertical="top"
@@ -181,15 +176,12 @@ export default function WriteScreen() {
           disabled={loading}
         >
           <Ionicons name="checkmark" size={18} color="white" />
-          <Text style={styles.doneText}>
-            {loading ? "Saving..." : "Done"}
-          </Text>
+          <Text style={styles.doneText}>{loading ? "Saving..." : "Done"}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
   );
 }
-
 
 // ===== Styles =====
 const styles = StyleSheet.create({

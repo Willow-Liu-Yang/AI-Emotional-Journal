@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { authApi } from "../api/auth";
 
 import {
@@ -16,9 +16,15 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 
 export default function Signup() {
+  const { height: screenH } = useWindowDimensions();
+
+  // 小屏（例如 iPhone SE）更紧凑一些
+  const compact = useMemo(() => screenH < 740, [screenH]);
+
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirm, setConfirm] = useState<string>("");
@@ -38,19 +44,15 @@ export default function Signup() {
     try {
       setLoading(true);
 
-      // 1️⃣ 注册接口（现在后端已返回 access_token + user）
       const data = await authApi.register(email, password);
 
-      // 2️⃣ 保存 token（关键步骤！）
       if (data?.access_token) {
         await AsyncStorage.setItem("token", data.access_token);
       } else {
-        console.warn("⚠️ Register response missing access_token:", data);
+        console.warn("Register response missing access_token:", data);
       }
 
-      // 3️⃣ 跳到 nickname 界面
       router.replace("/nickname");
-
     } catch (err: any) {
       console.error("register error:", err);
       Alert.alert("Registration failed", String(err.message || err));
@@ -61,16 +63,28 @@ export default function Signup() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#F6E9D8" }}
+      style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 6 : 0}
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.headerText}>Let&apos;s get cozy.</Text>
-
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.container,
+          compact ? styles.containerCompact : null,
+        ]}
+      >
+        {/* 插图 */}
         <Image
           source={require("../assets/images/login/bear.png")}
-          style={styles.illustration}
+          style={[styles.illustration, compact && styles.illustrationCompact]}
         />
+
+        {/* 标题：放在图片下面，和 Login 对齐 */}
+        <Text style={[styles.headerText, compact && styles.headerTextCompact]}>
+          Let&apos;s get cozy.
+        </Text>
 
         {/* Email */}
         <Text style={styles.label}>Email</Text>
@@ -88,7 +102,9 @@ export default function Signup() {
         </View>
 
         {/* Password */}
-        <Text style={[styles.label, { marginTop: 14 }]}>Password</Text>
+        <Text style={[styles.label, { marginTop: compact ? 12 : 14 }]}>
+          Password
+        </Text>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
@@ -108,7 +124,9 @@ export default function Signup() {
         </View>
 
         {/* Confirm Password */}
-        <Text style={[styles.label, { marginTop: 14 }]}>Confirm Password</Text>
+        <Text style={[styles.label, { marginTop: compact ? 12 : 14 }]}>
+          Confirm Password
+        </Text>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
@@ -122,7 +140,11 @@ export default function Signup() {
 
         {/* Sign Up button */}
         <TouchableOpacity
-          style={[styles.signUpButton, { opacity: loading ? 0.7 : 1 }]}
+          style={[
+            styles.signUpButton,
+            { opacity: loading ? 0.7 : 1 },
+            compact && { marginTop: 18 },
+          ]}
           onPress={handleRegister}
           disabled={loading}
         >
@@ -146,33 +168,57 @@ export default function Signup() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#F6E9D8",
+  },
+
   container: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 56, // 比之前 70 更适合“先图后标题”的结构
     paddingBottom: 40,
     alignItems: "center",
+    justifyContent: "flex-start",
   },
-  headerText: {
-    width: "100%",
-    fontSize: 36,
-    fontWeight: "700",
-    color: "#5A4634",
-    textAlign: "center",
-    marginBottom: 6,
+  containerCompact: {
+    paddingTop: 44,
+    paddingBottom: 28,
   },
+
   illustration: {
-    width: 220,
-    height: 220,
+    width: 210,
+    height: 210,
     resizeMode: "contain",
     marginBottom: 10,
   },
+  illustrationCompact: {
+    width: 175,
+    height: 175,
+    marginBottom: 8,
+  },
+
+  headerText: {
+    width: "100%",
+    fontSize: 30,
+    fontWeight: "700",
+    color: "#5A4634",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  headerTextCompact: {
+    fontSize: 28,
+    marginBottom: 12,
+  },
+
   label: {
     alignSelf: "flex-start",
     color: "#5A4634",
     fontSize: 16,
-    marginTop: 8,
+    marginTop: 6,
     marginBottom: 6,
   },
+
   inputWrapper: {
     width: "100%",
     flexDirection: "row",
@@ -189,6 +235,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#5A4634",
   },
+
   signUpButton: {
     width: "100%",
     backgroundColor: "#9DBA96",
@@ -202,6 +249,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+
   footer: {
     flexDirection: "row",
     marginTop: 16,
