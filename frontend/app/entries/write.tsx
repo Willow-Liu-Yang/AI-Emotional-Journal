@@ -1,6 +1,6 @@
 // app/entries/write.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -10,23 +10,14 @@ import {
   TouchableOpacity,
   Platform,
   StyleSheet,
-  Animated,
   Keyboard,
   Switch,
   Image,
-  Dimensions,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 import { entriesApi } from "@/api/entries";
-
-// ===== 动态高度 =====
-const SCREEN_HEIGHT = Dimensions.get("window").height;
-
-// 无 prompt 时输入区 ~40% 屏幕
-const EDITOR_HEIGHT_NO_PROMPT = SCREEN_HEIGHT * 0.40;
-
-// 有 prompt 时输入区 ~33% 屏幕
-const EDITOR_HEIGHT_WITH_PROMPT = SCREEN_HEIGHT * 0.33;
 
 // ===== prompt 数据（必须覆盖所有会传入的 promptKey）=====
 const PROMPTS: Record<string, { icon: any; text: string }> = {
@@ -67,32 +58,6 @@ export default function WriteScreen() {
   const [needAI, setNeedAI] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  // bottom bar 动画
-  const bottomAnim = useState(new Animated.Value(0))[0];
-
-  useEffect(() => {
-    const show = Keyboard.addListener("keyboardWillShow", (e) => {
-      Animated.timing(bottomAnim, {
-        toValue: e.endCoordinates.height - 10,
-        duration: 260,
-        useNativeDriver: false,
-      }).start();
-    });
-
-    const hide = Keyboard.addListener("keyboardWillHide", () => {
-      Animated.timing(bottomAnim, {
-        toValue: 0,
-        duration: 260,
-        useNativeDriver: false,
-      }).start();
-    });
-
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-
   async function handleSubmit() {
     if (!content.trim()) {
       alert("Please write something first.");
@@ -102,13 +67,13 @@ export default function WriteScreen() {
     try {
       setLoading(true);
 
-      // ✅ 后端只需要 content + need_ai_reply
+      // 后端只需要 content + need_ai_reply
       await entriesApi.create({
         content,
         need_ai_reply: needAI,
       });
 
-      router.back();
+      router.replace("/(tabs)/journal");
     } catch (err: any) {
       alert(err.message || "Failed to save entry.");
     } finally {
@@ -126,74 +91,74 @@ export default function WriteScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F2E4D2" }}>
-      {/* TOP区域 */}
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="#6A4A2A" />
-          </TouchableOpacity>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        {/* 点击写作区域之外，收起键盘（不包住底栏，避免影响底栏点击） */}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.headerRow}>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Ionicons name="chevron-back" size={24} color="#6A4A2A" />
+              </TouchableOpacity>
 
-          <Text style={styles.dateText}>{todayLabel}</Text>
+              <Text style={styles.dateText}>{todayLabel}</Text>
 
-          <View style={{ width: 24 }} />
-        </View>
+              <View style={{ width: 24 }} />
+            </View>
 
-        {/* Prompt card */}
-        {promptData && (
-          <View style={styles.promptCard}>
-            <Image source={promptData.icon} style={styles.promptIcon} />
-            <Text style={styles.promptText}>{promptData.text}</Text>
+            {/* Prompt card */}
+            {promptData && (
+              <View style={styles.promptCard}>
+                <Image source={promptData.icon} style={styles.promptIcon} />
+                <Text style={styles.promptText}>{promptData.text}</Text>
+              </View>
+            )}
+
+            {/* 编辑区域：用 flex:1 自动占满到底部栏之前 */}
+            <View style={styles.editorCard}>
+              <TextInput
+                style={styles.editorInput}
+                placeholder="Write about your day..."
+                placeholderTextColor="#B08663"
+                multiline
+                scrollEnabled={true}
+                value={content}
+                onChangeText={setContent}
+                textAlignVertical="top"
+              />
+            </View>
+
+            {/* 这里加一点距离：白色编辑框 和 底部栏之间 */}
+            <View style={{ height: 10 }} />
           </View>
-        )}
+        </TouchableWithoutFeedback>
 
-        {/* 动态高度编辑区域 */}
-        <View
-          style={[
-            styles.editorCard,
-            {
-              height: promptData
-                ? EDITOR_HEIGHT_WITH_PROMPT
-                : EDITOR_HEIGHT_NO_PROMPT,
-            },
-          ]}
-        >
-          <TextInput
-            style={styles.editorInput}
-            placeholder="Write about your day..."
-            placeholderTextColor="#B08663"
-            multiline
-            scrollEnabled={true}
-            value={content}
-            onChangeText={setContent}
-            textAlignVertical="top"
-          />
+        {/* Bottom Bar：放在正常布局里，占真实高度；键盘弹出时自动上移 */}
+        <View style={styles.bottomBar}>
+          <View style={styles.aiRow}>
+            <Text style={styles.aiLabel}>AI Feedback</Text>
+            <Switch
+              value={needAI}
+              onValueChange={setNeedAI}
+              thumbColor={Platform.OS === "android" ? "white" : undefined}
+              trackColor={{ false: "#D0C2B5", true: "#82A277" }}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.doneBtn, loading && { opacity: 0.7 }]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            <Ionicons name="checkmark" size={18} color="white" />
+            <Text style={styles.doneText}>{loading ? "Saving..." : "Done"}</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Bottom Bar */}
-      <Animated.View style={[styles.bottomBar, { bottom: bottomAnim }]}>
-        <View style={styles.aiRow}>
-          <Text style={styles.aiLabel}>AI Feedback</Text>
-          <Switch
-            value={needAI}
-            onValueChange={setNeedAI}
-            thumbColor={Platform.OS === "android" ? "white" : undefined}
-            trackColor={{ false: "#D0C2B5", true: "#82A277" }}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.doneBtn, loading && { opacity: 0.7 }]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          <Ionicons name="checkmark" size={18} color="white" />
-          <Text style={styles.doneText}>
-            {loading ? "Saving..." : "Done"}
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -242,7 +207,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
+  // 关键：让白色编辑框占满“剩余高度”（直到 Bottom Bar 之前）
   editorCard: {
+    flex: 1,
     backgroundColor: "#F8F2EA",
     borderRadius: 18,
     paddingHorizontal: 16,
@@ -264,16 +231,12 @@ const styles = StyleSheet.create({
   },
 
   bottomBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
     backgroundColor: "white",
     paddingVertical: 12,
     paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-
     borderTopWidth: 1,
     borderTopColor: "#E6E0D6",
   },
