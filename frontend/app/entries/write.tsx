@@ -28,7 +28,7 @@ const EDITOR_HEIGHT_NO_PROMPT = SCREEN_HEIGHT * 0.40;
 // 有 prompt 时输入区 ~33% 屏幕
 const EDITOR_HEIGHT_WITH_PROMPT = SCREEN_HEIGHT * 0.33;
 
-// ===== prompt 数据 =====
+// ===== prompt 数据（必须覆盖所有会传入的 promptKey）=====
 const PROMPTS: Record<string, { icon: any; text: string }> = {
   capture_joy: {
     icon: require("@/assets/images/icons/prompt/capture_joy.png"),
@@ -38,16 +38,28 @@ const PROMPTS: Record<string, { icon: any; text: string }> = {
     icon: require("@/assets/images/icons/prompt/let_it_out.png"),
     text: "What feelings have been quietly rising inside you?",
   },
+  warm_moments: {
+    icon: require("@/assets/images/icons/prompt/warm_moments.png"),
+    text: "What made you feel warm, safe, or comforted today?",
+  },
   steps_forward: {
     icon: require("@/assets/images/icons/prompt/steps_forward.png"),
     text: "What small step did you take toward something important?",
+  },
+  reflect_grow: {
+    icon: require("@/assets/images/icons/prompt/reflect_grow.png"),
+    text: "What did you learn about yourself today?",
+  },
+  rest_gently: {
+    icon: require("@/assets/images/icons/prompt/rest_gently.png"),
+    text: "What helped your body or mind rest today?",
   },
 };
 
 export default function WriteScreen() {
   const router = useRouter();
 
-  // 首页传过来的 promptKey
+  // 首页/PromptLibrary 传过来的 promptKey
   const { promptKey } = useLocalSearchParams<{ promptKey?: string }>();
   const promptData = promptKey ? PROMPTS[promptKey] : null;
 
@@ -90,8 +102,7 @@ export default function WriteScreen() {
     try {
       setLoading(true);
 
-      // ✅ 关键修复：后端不再接收 emotion / emotion_intensity
-      // 只传 content + need_ai_reply
+      // ✅ 后端只需要 content + need_ai_reply
       await entriesApi.create({
         content,
         need_ai_reply: needAI,
@@ -141,7 +152,9 @@ export default function WriteScreen() {
           style={[
             styles.editorCard,
             {
-              height: promptData ? EDITOR_HEIGHT_WITH_PROMPT : EDITOR_HEIGHT_NO_PROMPT,
+              height: promptData
+                ? EDITOR_HEIGHT_WITH_PROMPT
+                : EDITOR_HEIGHT_NO_PROMPT,
             },
           ]}
         >
@@ -150,7 +163,7 @@ export default function WriteScreen() {
             placeholder="Write about your day..."
             placeholderTextColor="#B08663"
             multiline
-            scrollEnabled={true} // ★ 内部滚动
+            scrollEnabled={true}
             value={content}
             onChangeText={setContent}
             textAlignVertical="top"
@@ -176,7 +189,9 @@ export default function WriteScreen() {
           disabled={loading}
         >
           <Ionicons name="checkmark" size={18} color="white" />
-          <Text style={styles.doneText}>{loading ? "Saving..." : "Done"}</Text>
+          <Text style={styles.doneText}>
+            {loading ? "Saving..." : "Done"}
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </View>

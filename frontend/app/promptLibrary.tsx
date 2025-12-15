@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// app/promptLibrary.tsx  (或 app/promptLibrary/index.tsx)
+
+import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
@@ -9,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type PromptItem = {
   id: string;
@@ -39,8 +42,7 @@ const PROMPTS: PromptItem[] = [
   {
     id: "steps_forward",
     title: "Steps Forward",
-    description:
-      "What small step did you take toward something important?",
+    description: "What small step did you take toward something important?",
     icon: require("@/assets/images/icons/prompt/steps_forward.png"),
   },
   {
@@ -57,35 +59,26 @@ const PROMPTS: PromptItem[] = [
   },
 ];
 
-// 专门给 Prompt Library 用的小卡片
-function PromptCard({
+function PromptRow({
   item,
-  selected,
   onPress,
 }: {
   item: PromptItem;
-  selected: boolean;
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={onPress}
-      style={[
-        styles.cardWrapper,
-        selected && styles.cardWrapperActive,
-      ]}
-    >
-      <View style={styles.card}>
-        <Image source={item.icon} style={styles.cardIcon} />
+    <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.rowCard}>
+      <View style={styles.rowLeft}>
+        <View style={styles.iconWrap}>
+          <Image source={item.icon} style={styles.icon} />
+        </View>
+      </View>
 
-        {/* 小标题：比首页小一点 */}
-        <Text style={styles.cardTitle} numberOfLines={2}>
+      <View style={styles.rowBody}>
+        <Text style={styles.rowTitle} numberOfLines={1}>
           {item.title}
         </Text>
-
-        {/* 描述：字体稍微大一点，最多 3 行，基本都能放下 */}
-        <Text style={styles.cardDesc} numberOfLines={3}>
+        <Text style={styles.rowDesc} numberOfLines={3}>
           {item.description}
         </Text>
       </View>
@@ -95,130 +88,137 @@ function PromptCard({
 
 export default function PromptLibraryScreen() {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const handleSelect = (item: PromptItem) => {
-    setSelectedId(item.id);
-    // 之后在这里跳到写作页并带上 prompt
-    // router.push({ pathname: "/write", params: { promptId: item.id } });
+  const handleSelect = (promptKey: string) => {
+    router.push({
+      pathname: "/entries/write",
+      params: { promptKey },
+    });
   };
 
   return (
-    <View style={styles.container}>
-      {/* 顶部标题 + 返回 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#5A4634" />
+          </TouchableOpacity>
+
+          <Text style={styles.title}>All Prompts</Text>
+
+          <View style={styles.headerRightPlaceholder} />
+        </View>
+
+        {/* ✅ Hint */}
+        <Text style={styles.hint}>Tap a prompt to start writing.</Text>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Ionicons name="chevron-back" size={24} color="#5A4634" />
-        </TouchableOpacity>
-
-        {/* All Prompts：字号调小一点，看起来没那么“压”住下面 */}
-        <Text style={styles.title}>All Prompts</Text>
-
-        {/* 占位，让标题居中 */}
-        <View style={styles.headerRightPlaceholder} />
-      </View>
-
-      {/* 内容区：2 列网格 */}
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.grid}>
           {PROMPTS.map((item) => (
-            <PromptCard
+            <PromptRow
               key={item.id}
               item={item}
-              selected={selectedId === item.id}
-              onPress={() => handleSelect(item)}
+              onPress={() => handleSelect(item.id)}
             />
           ))}
-        </View>
-      </ScrollView>
-    </View>
+
+          <View style={{ height: 10 }} />
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
-//
-// ─── Styles ─────────────────────────────────────────────
-//
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F5EAD9",
+  },
   container: {
     flex: 1,
     backgroundColor: "#F5EAD9",
-    paddingTop: 50,
+    paddingHorizontal: 16,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   backButton: {
-    padding: 4,
+    padding: 6,
   },
   title: {
     flex: 1,
     textAlign: "center",
-    fontSize: 24,          // ⭐ 比原来的 28 小一点
+    fontSize: 22,
     fontWeight: "700",
     color: "#5A4634",
   },
   headerRightPlaceholder: {
-    width: 28,
+    width: 36,
+  },
+
+  // ✅ Hint line under title
+  hint: {
+    fontSize: 13,
+    color: "#7A6A54",
+    textAlign: "center",
+    marginBottom: 12,
   },
 
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,     // 底部留少一点空
+    paddingBottom: 12,
   },
 
-  grid: {
+  rowCard: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-
-  // 外层：控制大小 + 选中高亮
-  cardWrapper: {
-    width: "48%",          // 两列
-    marginBottom: 14,
-    borderRadius: 26,
-    padding: 3,
-  },
-  cardWrapperActive: {
-    borderWidth: 3,
-    borderColor: "#3A7BFF",
-  },
-
-  // 内层：固定高度，让 6 个卡片基本填满屏幕
-  card: {
-    height: 185,           // ⭐ 比之前高一点，给文字更多空间
-    borderRadius: 23,
+    alignItems: "center",
     backgroundColor: "#FAF1E5",
-    paddingHorizontal: 10,
-    paddingVertical: 12,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  rowLeft: {
+    marginRight: 12,
+  },
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: "rgba(227, 214, 199, 0.35)",
+    justifyContent: "center",
     alignItems: "center",
   },
-  cardIcon: {
-    width: 48,
-    height: 48,
+  icon: {
+    width: 28,
+    height: 28,
     resizeMode: "contain",
-    marginTop: 2,
   },
-  cardTitle: {
-    fontSize: 16,          // ⭐ 小标题再小一点
-    fontWeight: "700",
+
+  rowBody: {
+    flex: 1,
+  },
+  rowTitle: {
+    fontSize: 16,
+    fontWeight: "800",
     color: "#4A3828",
-    textAlign: "center",
-    marginTop: 8,
-    marginHorizontal: 6,
+    marginBottom: 4,
   },
-  cardDesc: {
-    fontSize: 13,          // ⭐ 描述略大一点，方便阅读
+  rowDesc: {
+    fontSize: 14,
+    lineHeight: 18,
     color: "#7A6A54",
-    textAlign: "center",
-    marginTop: 6,
-    marginHorizontal: 6,
   },
 });
