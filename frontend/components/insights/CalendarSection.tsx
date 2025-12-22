@@ -7,7 +7,7 @@ import { Image, StyleSheet, Text, View } from "react-native";
  *  - week:  [{ date, paw }]
  *  - month: [[paw, paw, ...], ...]
  *
- * paw value: "none" | "light" | "dark"
+ * paw value: "none" | "light" | "dark" | "empty"
  *
  * This component prefers assets/insights/paw_*.png (none/light/dark),
  * and falls back to emoji when images are missing.
@@ -17,6 +17,7 @@ import { Image, StyleSheet, Text, View } from "react-native";
 let pawNoneImg: any = null;
 let pawLightImg: any = null;
 let pawDarkImg: any = null;
+let pawEmptyImg: any = null;
 
 try {
   pawNoneImg = require("../../assets/images/insights/paw.png");
@@ -33,6 +34,11 @@ try {
 } catch (e) {
   pawDarkImg = null;
 }
+try {
+  pawEmptyImg = require("../../assets/images/insights/paw_empty.png");
+} catch (e) {
+  pawEmptyImg = null;
+}
 
 export default function CalendarSection({
   range,
@@ -45,7 +51,7 @@ export default function CalendarSection({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Paw Print Calendar</Text>
+      <Text style={styles.title}>Paw Calendar</Text>
 
       {range === "week" ? (
         <WeekCalendar week={calendarData.week ?? []} />
@@ -70,12 +76,14 @@ function WeekCalendar({ week }: { week: Array<any> }) {
         const paw = item?.paw ?? "none";
         const dateStr = item?.date ?? null;
         const isToday = dateStr === todayIso;
+        const isFuture = dateStr ? dateStr > todayIso : false;
+        const displayPaw = paw === "none" ? (isFuture ? "empty" : "none") : paw;
 
         return (
           <View key={i} style={styles.weekItem}>
             <Text style={styles.weekDay}>{label}</Text>
             <View style={[styles.pawWrapper, isToday && styles.todayGlow]}>
-              {renderPawImageOrEmoji(paw)}
+              {renderPawImageOrEmoji(displayPaw)}
             </View>
           </View>
         );
@@ -85,17 +93,27 @@ function WeekCalendar({ week }: { week: Array<any> }) {
 }
 
 /* ----------------------------------------------------
- * MONTH VIEW (6 × 7 grid)
+ * MONTH VIEW (6 x 7 grid)
  * ---------------------------------------------------- */
 function MonthCalendar({ month }: { month: string[][] }) {
   const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   // month is array of 6 rows, each row is 7 strings: "none"/"light"/"dark"
-  // we don't have date numbers here by default; if you want numbers show, backend should return them.
-  // We'll highlight today if a matching cell has today's date by comparing a parallel data structure.
-  // For now we just render paw images per state.
+  // Build a local calendar grid for the current month so we can show date numbers.
+  const today = new Date();
+  const year = today.getFullYear();
+  const monthIndex = today.getMonth();
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const firstDay = new Date(year, monthIndex, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
 
-  // attempt to detect today's position if backend returned real dates instead of simple states:
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const grid = Array.from({ length: 6 }, (_, r) =>
+    Array.from({ length: 7 }, (_, c) => {
+      const idx = r * 7 + c;
+      const dayNum = idx - startOffset + 1;
+      if (dayNum < 1 || dayNum > daysInMonth) return null;
+      return dayNum;
+    })
+  );
 
   return (
     <View>
@@ -107,17 +125,35 @@ function MonthCalendar({ month }: { month: string[][] }) {
         ))}
       </View>
 
-      {month.map((row, rIdx) => (
+      {grid.map((row, rIdx) => (
         <View key={rIdx} style={styles.monthRow}>
-          {row.map((state, cIdx) => {
-            const pawState = state ?? "none";
-            // if backend returns objects instead of string, adapt: if typeof state === 'object' use state.paw
-            const isToday = false; // placeholder: month view highlighting needs backend-provided date info to be precise
+          {row.map((dayNum, cIdx) => {
+            const pawState = month?.[rIdx]?.[cIdx] ?? "none";
+            const isFuture =
+              dayNum != null &&
+              (year > today.getFullYear() ||
+                (year === today.getFullYear() &&
+                  (monthIndex > today.getMonth() ||
+                    (monthIndex === today.getMonth() && dayNum > today.getDate()))));
+            const isToday =
+              dayNum != null &&
+              dayNum === today.getDate() &&
+              year === today.getFullYear() &&
+              monthIndex === today.getMonth();
+            const displayPaw =
+              dayNum == null
+                ? "none"
+                : pawState === "none"
+                  ? isFuture
+                    ? "empty"
+                    : "none"
+                  : pawState;
             return (
               <View key={cIdx} style={styles.monthCell}>
-                <View style={[styles.pawWrapper, isToday && styles.todayGlow]}>
-                  {renderPawImageOrEmoji(pawState)}
+                <View style={[styles.monthPawWrapper, isToday && styles.todayGlow]}>
+                  {renderPawImageOrEmoji(displayPaw)}
                 </View>
+                <Text style={styles.monthDateText}>{dayNum ?? ""}</Text>
               </View>
             );
           })}
@@ -141,6 +177,13 @@ function renderPawImageOrEmoji(state: string) {
   if (state === "none" && pawNoneImg) {
     return <Image source={pawNoneImg} style={styles.pawImage} resizeMode="contain" />;
   }
+  if (state === "empty" && pawEmptyImg) {
+    return <Image source={pawEmptyImg} style={styles.pawImage} resizeMode="contain" />;
+  }
+
+  if (state === "empty") {
+    return null;
+  }
 
   // fallback emoji with correct color
   switch (state) {
@@ -148,8 +191,10 @@ function renderPawImageOrEmoji(state: string) {
       return <Text style={[styles.pawEmoji, { color: "#8C5E33" }]}>🐾</Text>;
     case "light":
       return <Text style={[styles.pawEmoji, { color: "#D4C0A3" }]}>🐾</Text>;
-    default:
+    case "none":
       return <Text style={[styles.pawEmoji, { color: "#E8E0D0" }]}>🐾</Text>;
+    default:
+      return null;
   }
 }
 
@@ -197,18 +242,14 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 10,
-    backgroundColor: "#F2E7D8",
     justifyContent: "center",
     alignItems: "center",
   },
 
   todayGlow: {
-    // subtle yellow glow for today
-    shadowColor: "#F0D87A",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
-    elevation: 6,
+    // yellow outline for today
+    borderWidth: 2,
+    borderColor: "#F6D36B",
   },
 
   /* ----- Month ----- */
@@ -233,9 +274,23 @@ const styles = StyleSheet.create({
 
   monthCell: {
     width: 44,
-    height: 44,
+    height: 68,
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+
+  monthPawWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  monthDateText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "#6B4F3A",
   },
 
   pawImage: {
