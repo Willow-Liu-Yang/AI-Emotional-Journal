@@ -9,7 +9,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const hostUri = Constants.expoConfig?.hostUri;
 const LAN_IP = hostUri?.split(":")[0] ?? "localhost";
 
-export const API_URL = `http://${LAN_IP}:9000`;
+// Prefer explicit override when available (more reliable for Expo Go / builds)
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? `http://${LAN_IP}:9000`;
 
 console.log("🌐 Using API_URL:", API_URL);
 

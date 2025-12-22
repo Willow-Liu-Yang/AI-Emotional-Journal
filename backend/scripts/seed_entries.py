@@ -3,11 +3,12 @@
 import os
 import sys
 
-# 让 Python 知道 backend 根目录的位置
+# Let Python know backend root path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 import random
 from datetime import datetime, timedelta
+import calendar
 
 from sqlalchemy.orm import Session
 
@@ -15,14 +16,13 @@ from database import SessionLocal
 from models import JournalEntry, User
 from services.ai_reply_service import generate_ai_reply_for_entry
 
-# 👉 在这里指定你想插入日记的「用户邮箱」(User.email)
-#    例如登录用的是 "test@example.com"，就填那个
-TARGET_EMAIL = "jiawenchen.jwc@outlook.com"  # 比如 "test@example.com"
+# Set the target user's email (User.email)
+TARGET_EMAIL = "test@example.com"
 
-# ✅ 你项目中定义的六种情绪（只是用来挑文案，不直接写进表）
+# Emotion pool (only used to pick text; emotion/intensity are written by AI service)
 EMOTIONS = ["joy", "calm", "tired", "anxiety", "sadness", "anger"]
 
-# 按情绪分好的样本句子（只用来生成日记文字）
+# Sample sentences grouped by emotion
 EMOTION_SENTENCES = {
     "joy": [
         "Today felt unexpectedly bright. I finished my tasks earlier than I planned and even had time to walk around the campus. The sunlight felt warm on my face and for a moment, everything felt easy.",
@@ -60,138 +60,148 @@ EMOTION_SENTENCES = {
 }
 
 
-def get_year_month_offset(base_year: int, base_month: int, offset: int) -> tuple[int, int]:
-  """
-  从当前年月往前 offset 个月，比如：
-  offset=0 -> 当月
-  offset=1 -> 上个月
-  offset=2 -> 上上个月
-  """
-  m = base_month - offset
-  y = base_year
-  while m <= 0:
-      m += 12
-      y -= 1
-  return y, m
+def clamp_day(year: int, month: int, day: int) -> int:
+    """Clamp day to the last valid day of the given month."""
+    last_day = calendar.monthrange(year, month)[1]
+    return min(day, last_day)
 
 
-def seed_entries_for_user(
-    months: int = 3,
-    entries_per_month: int = 5,
-):
+def same_day_last_month(dt: datetime) -> datetime:
+    """Return 'same day last month' (clamped if last month is shorter)."""
+    y = dt.year
+    m = dt.month - 1
+    if m == 0:
+        y -= 1
+        m = 12
+    d = clamp_day(y, m, dt.day)
+    return dt.replace(year=y, month=m, day=d)
+
+
+def same_day_last_year(dt: datetime) -> datetime:
+    """Return 'same day last year' (handles Feb 29 -> Feb 28)."""
+    y = dt.year - 1
+    m = dt.month
+    d = clamp_day(y, m, dt.day)
+    return dt.replace(year=y, month=m, day=d)
+
+
+def random_time_on_date(day_dt: datetime) -> datetime:
+    """Assign a random time (08:00-22:59) on the given date."""
+    return day_dt.replace(
+        hour=random.randint(8, 22),
+        minute=random.randint(0, 59),
+        second=random.randint(0, 59),
+        microsecond=0,
+    )
+
+
+def create_entry_with_ai(db: Session, user: User, created_at: datetime) -> None:
+    """Create one JournalEntry, then call AI service to generate reply + emotion/intensity."""
+    emotion = random.choice(EMOTIONS)
+    content = random.choice(EMOTION_SENTENCES[emotion])
+
+    entry = JournalEntry(
+        user_id=user.id,
+        content=content,
+        summary=content[:200],
+        created_at=created_at,
+        deleted=False,
+    )
+
+    db.add(entry)
+    db.flush()  # get entry.id
+
+    try:
+        ai_reply = generate_ai_reply_for_entry(
+            db=db,
+            entry_id=entry.id,
+            current_user=user,
+            force_regenerate=False,
+        )
+        print(f"Created entry_id={entry.id}; AI reply id={ai_reply.id}")
+    except Exception as e:
+        print(f"Created entry_id={entry.id}; AI reply failed: {e}")
+
+
+def seed_entries_for_user(total_entries: int = 6) -> None:
     """
-    为指定用户生成测试日记数据：
-    - 最近 months 个月（包含当月）
-    - 每个月随机选择 entries_per_month 天，每天 1 条日记
-    - 日记内容根据情绪模板随机选一句
-    - 不直接写 emotion / emotion_intensity
-    - 为每条日记调用 generate_ai_reply_for_entry，让 AI 生成回复 + 情绪 + 强度
+    Seed about 6 entries for the specified user:
+    - today
+    - same weekday last week (today - 7 days)
+    - same day last month (clamped if needed)
+    - same day last year (clamped if needed)
+    - plus 2 additional random dates (recent 60 days) avoiding duplicates
+
+    For each entry, we call generate_ai_reply_for_entry to generate AI reply + emotion + intensity.
     """
 
     db: Session = SessionLocal()
 
-    # 1. 查找目标用户（优先按邮箱）
+    # Find target user
     user_query = db.query(User)
-
     if TARGET_EMAIL:
         user_query = user_query.filter(User.email == TARGET_EMAIL)
 
     user = user_query.order_by(User.id.asc()).first()
-
     if not user:
         if TARGET_EMAIL:
-            print(f"❌ 没有找到 email 为 {TARGET_EMAIL!r} 的用户，请确认后再试。")
+            print(f"User not found for email={TARGET_EMAIL!r}. Please register/login once, then retry.")
         else:
-            print("❌ 没有找到任何用户，请先注册一个用户再运行脚本。")
+            print("No users found. Please register a user first, then retry.")
         db.close()
         return
 
-    print(f"✅ 为用户 id={user.id}, email={user.email} 生成 3 个月测试日记数据...")
+    now = datetime.utcnow()
 
-    # 👉 如需每次 seed 前清空该用户原有日记，可以手动解开：
+    # Fixed required dates
+    fixed_dates = [
+        now,
+        now - timedelta(days=7),          # last week's today
+        same_day_last_month(now),         # last month's today (clamped)
+        same_day_last_year(now),          # last year's today (clamped)
+    ]
+
+    # Use date keys to avoid duplicates across months/years edge cases
+    used_date_keys = set()
+    all_target_dates = []
+
+    for d in fixed_dates:
+        key = (d.year, d.month, d.day)
+        if key not in used_date_keys:
+            used_date_keys.add(key)
+            all_target_dates.append(d)
+
+    # Add extra random dates (recent 60 days), avoiding duplicates
+    # Keep generating until we reach total_entries, but hard-cap attempts to prevent infinite loops.
+    attempts = 0
+    while len(all_target_dates) < total_entries and attempts < 200:
+        attempts += 1
+        delta_days = random.randint(1, 60)
+        d = now - timedelta(days=delta_days)
+        key = (d.year, d.month, d.day)
+        if key in used_date_keys:
+            continue
+        used_date_keys.add(key)
+        all_target_dates.append(d)
+
+    # Sort by created_at ascending (optional; nicer chronology)
+    all_target_dates.sort()
+
+    print(f"Seeding {len(all_target_dates)} entries for user id={user.id}, email={user.email} ...")
+
+    # Optional: clear existing entries for this user (uncomment if needed)
     # db.query(JournalEntry).where(JournalEntry.user_id == user.id).delete()
     # db.commit()
-    # print("⚠️ 已清空该用户原有日记数据。")
+    # print("Cleared existing entries for this user.")
 
-    now = datetime.utcnow()
-    base_year = now.year
-    base_month = now.month
+    for d in all_target_dates:
+        created_at = random_time_on_date(d)
+        create_entry_with_ai(db, user, created_at)
 
-    total_entries = 0
-
-    for offset in range(months):
-        year, month = get_year_month_offset(base_year, base_month, offset)
-        first_day = datetime(year, month, 1)
-
-        # 下个月的第一天
-        if month == 12:
-            next_first = datetime(year + 1, 1, 1)
-        else:
-            next_first = datetime(year, month + 1, 1)
-
-        days_in_month = (next_first - first_day).days
-
-        # 这个月实际要生成多少条（防止 2 月太短）
-        k = min(entries_per_month, days_in_month)
-
-        # 随机挑 k 个不同的日期
-        day_offsets = random.sample(range(days_in_month), k=k)
-
-        print(f"📅 {year}-{month:02d}: 生成 {k} 条日记...")
-
-        for day_offset in day_offsets:
-            day_date = first_day + timedelta(days=day_offset)
-
-            # 选一个情绪和对应文案（只是为了让内容看起来合理一点）
-            emotion = random.choice(EMOTIONS)
-            content = random.choice(EMOTION_SENTENCES[emotion])
-
-            created_at = day_date.replace(
-                hour=random.randint(8, 22),
-                minute=random.randint(0, 59),
-                second=random.randint(0, 59),
-                microsecond=0,
-            )
-
-            entry = JournalEntry(
-                user_id=user.id,
-                content=content,
-                summary=content[:200],
-                created_at=created_at,
-                # 这里不直接写 emotion / emotion_intensity，
-                # 让 AI 在 generate_ai_reply_for_entry 里统一分析并写入
-                deleted=False,
-            )
-
-            db.add(entry)
-            db.flush()  # 拿到 entry.id
-
-            # ✨ 直接调用你们的 AI service：
-            # - 生成 empathetic reply
-            # - 同时分析 emotion / intensity 并写回 JournalEntry
-            try:
-                ai_reply = generate_ai_reply_for_entry(
-                    db=db,
-                    entry_id=entry.id,
-                    current_user=user,
-                    force_regenerate=False,
-                )
-                # service 内部一般会 commit，一次 commit 会把当前 session 的改动都保存
-                print(
-                    f"  ➕ entry_id={entry.id} | AI reply id={ai_reply.id} 已生成"
-                )
-            except Exception as e:
-                # 如果 AI 调用失败，也至少保留日记
-                print(f"  ⚠️ entry_id={entry.id} 生成 AI 回复失败: {e}")
-
-            total_entries += 1
-
-    # 保险起见再 commit 一次（即使 service 里已经 commit 过也没问题）
     db.commit()
     db.close()
-    print(f"✅ Seed 完成，总共生成 {total_entries} 条日记（含 AI 回复）。")
+    print(f"Seed completed. Inserted {len(all_target_dates)} entries.")
 
 
 if __name__ == "__main__":
-    # 默认：最近 3 个月，每月 5 条
-    seed_entries_for_user(months=3, entries_per_month=5)
+    seed_entries_for_user(total_entries=6)
