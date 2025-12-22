@@ -1,7 +1,7 @@
 // components/insights/ValenceSection.tsx
 
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 
 interface TrendItem {
@@ -15,7 +15,23 @@ interface Props {
 }
 
 export default function ValenceSection({ range, trend }: Props) {
-  if (!trend || trend.length === 0) return null;
+  if (!trend || trend.length === 0) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>Emotional Valence Trend</Text>
+        <View style={styles.emptyRow}>
+          <Image
+            source={require("../../assets/images/insights/trend_empty.png")}
+            style={styles.emptyImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.emptyHint}>
+            Write an entry to see valence changes.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   // ---------------------------------------------------
   // 1. X labels
@@ -165,12 +181,28 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
   },
+  emptyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  emptyImage: {
+    width: 120,
+    height: 120,
+  },
+  emptyHint: {
+    flex: 1,
+    textAlign: "left",
+    color: "#6B4F3A",
+    fontSize: 15,
+  },
 
   title: {
     fontSize: 18,
     fontWeight: "600",
     color: "#6B4F3A",
     marginBottom: 8,
+    textAlign: "center",
   },
 
   legendRow: {

@@ -1,6 +1,6 @@
 // components/insights/FeelingsSection.tsx
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 type EmotionMap = Record<string, number>;
@@ -10,7 +10,23 @@ interface Props {
 }
 
 export default function FeelingsSection({ emotions }: Props) {
-  if (!emotions || Object.keys(emotions).length === 0) return null;
+  if (!emotions || Object.keys(emotions).length === 0) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>Top Feelings</Text>
+        <View style={styles.emptyRow}>
+          <Image
+            source={require("../../assets/images/insights/topfeelings_empty.png")}
+            style={styles.emptyImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.emptyHint}>
+            Write an entry to see your emotions.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   const total = Object.values(emotions).reduce((a, b) => a + b, 0) || 1;
 
@@ -33,8 +49,26 @@ export default function FeelingsSection({ emotions }: Props) {
 
   // We'll iterate entries in a stable order: sort by count desc to make large arcs first (optional)
   const entries = Object.entries(emotions)
-  .filter(([_, count]) => count > 0) // Filter out emotions with count 0
-  .sort((a, b) => b[1] - a[1]);
+    .filter(([_, count]) => count > 0) // Filter out emotions with count 0
+    .sort((a, b) => b[1] - a[1]);
+
+  if (entries.length === 0) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>Top Feelings</Text>
+        <View style={styles.emptyRow}>
+          <Image
+            source={require("../../assets/images/insights/topfeelings_empty.png")}
+            style={styles.emptyImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.emptyHint}>
+            Write an entry to see your emotions.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   // cumulative fraction tracker
   let cumulative = 0;
@@ -123,11 +157,27 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
   },
+  emptyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  emptyImage: {
+    width: 120,
+    height: 120,
+  },
+  emptyHint: {
+    flex: 1,
+    textAlign: "left",
+    color: "#6B4F3A",
+    fontSize: 15,
+  },
   title: {
     fontSize: 18,
     fontWeight: "600",
     color: "#6B4F3A",
     marginBottom: 12,
+    textAlign: "center",
   },
   container: {
     flexDirection: "row",

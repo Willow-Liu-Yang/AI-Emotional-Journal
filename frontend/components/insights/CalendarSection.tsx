@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#6B4F3A",
     marginBottom: 14,
+    textAlign: "center",
   },
 
   /* ----- Week ----- */

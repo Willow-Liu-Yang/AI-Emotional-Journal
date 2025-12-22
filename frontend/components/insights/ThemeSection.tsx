@@ -135,6 +135,9 @@ export default function ThemeSection({ themes }: { themes: ThemesInput }) {
       <View style={styles.card}>
         <Text style={styles.title}>Your Inner Landscape</Text>
         <Image source={EMPTY_STATE_IMAGE} style={styles.emptyImage} resizeMode="contain" />
+        <Text style={styles.emptyHint} numberOfLines={1}>
+          Write an entry to see your themes.
+        </Text>
       </View>
     );
   }
@@ -202,6 +205,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#6B4F3A",
     marginBottom: 14,
+    textAlign: "center",
   },
 
   image: {
@@ -213,6 +217,12 @@ const styles = StyleSheet.create({
   emptyImage: {
     width: "100%",
     height: 170,
+  },
+  emptyHint: {
+    marginTop: 8,
+    textAlign: "center",
+    color: "#6B4F3A",
+    fontSize: 14,
   },
 
   grid: {

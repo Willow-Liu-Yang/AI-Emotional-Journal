@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { authApi } from "../api/auth";
 
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -30,19 +29,35 @@ export default function Signup() {
   const [confirm, setConfirm] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const minPasswordLength = 6;
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
+  const canSubmit =
+    email.trim().length > 0 &&
+    password.length >= minPasswordLength &&
+    confirm.length > 0 &&
+    password === confirm &&
+    !loading;
 
   const handleRegister = async () => {
+    if (loading) return;
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in email and password.");
+      setError("Please fill in email and password.");
+      return;
+    }
+    if (password.length < minPasswordLength) {
+      setError(`Password must be at least ${minPasswordLength} characters.`);
       return;
     }
     if (password !== confirm) {
-      Alert.alert("Error", "Passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
     try {
       setLoading(true);
+      setError(null);
 
       const data = await authApi.register(email, password);
 
@@ -55,7 +70,7 @@ export default function Signup() {
       router.replace("/nickname");
     } catch (err: any) {
       console.error("register error:", err);
-      Alert.alert("Registration failed", String(err.message || err));
+      setError(String(err?.message || err));
     } finally {
       setLoading(false);
     }
@@ -94,10 +109,16 @@ export default function Signup() {
             placeholder="your@email.com"
             placeholderTextColor="#c6b7a6"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (error) setError(null);
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            editable={!loading}
           />
         </View>
 
@@ -107,12 +128,20 @@ export default function Signup() {
         </Text>
         <View style={styles.inputWrapper}>
           <TextInput
+            ref={passwordRef}
             style={styles.input}
-            placeholder="••••••••"
+            placeholder="********"
             placeholderTextColor="#c6b7a6"
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(value) => {
+              setPassword(value);
+              if (error) setError(null);
+            }}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => confirmRef.current?.focus()}
+            editable={!loading}
           />
           <TouchableOpacity onPress={() => setShowPassword((s) => !s)}>
             <Ionicons
@@ -122,31 +151,38 @@ export default function Signup() {
             />
           </TouchableOpacity>
         </View>
-
         {/* Confirm Password */}
         <Text style={[styles.label, { marginTop: compact ? 12 : 14 }]}>
           Confirm Password
         </Text>
         <View style={styles.inputWrapper}>
           <TextInput
+            ref={confirmRef}
             style={styles.input}
-            placeholder="••••••••"
+            placeholder="********"
             placeholderTextColor="#c6b7a6"
             secureTextEntry
             value={confirm}
-            onChangeText={setConfirm}
+            onChangeText={(value) => {
+              setConfirm(value);
+              if (error) setError(null);
+            }}
+            returnKeyType="done"
+            onSubmitEditing={handleRegister}
+            editable={!loading}
           />
         </View>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         {/* Sign Up button */}
         <TouchableOpacity
           style={[
             styles.signUpButton,
-            { opacity: loading ? 0.7 : 1 },
+            !canSubmit && styles.buttonDisabled,
             compact && { marginTop: 18 },
           ]}
           onPress={handleRegister}
-          disabled={loading}
+          disabled={!canSubmit}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -244,10 +280,18 @@ const styles = StyleSheet.create({
     marginTop: 22,
     alignItems: "center",
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   signUpText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  errorText: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    color: "#B33A3A",
   },
 
   footer: {

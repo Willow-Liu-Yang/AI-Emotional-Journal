@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { insightsApi } from "../../api/insights";
 
 import CalendarSection from "../../components/insights/CalendarSection";
@@ -20,6 +22,7 @@ import ThemeSection from "../../components/insights/ThemeSection";
 import ValenceSection from "../../components/insights/ValenceSection";
 
 export default function InsightsPage() {
+  const router = useRouter();
   const [range, setRange] = useState<"week" | "month">("week");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
@@ -52,7 +55,14 @@ export default function InsightsPage() {
     safe.calendar ?? (range === "week" ? { week: [] } : { month: [] });
   const safeEmotions = safe.emotions ?? {};
   const safeTrend = Array.isArray(safe.valence_trend) ? safe.valence_trend : [];
-  const safeNote = typeof safe.note === "string" ? safe.note : "";
+  const safeNoteAuthor =
+    typeof safe.note_author === "string" && safe.note_author.trim().length > 0
+      ? safe.note_author
+      : "Companion";
+  const safeNote =
+    typeof safe.note === "string" && safe.note.trim().length > 0
+      ? safe.note
+      : `Hi, I'm ${safeNoteAuthor}. I'm here and ready to listen whenever you write your first entry.`;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -74,8 +84,19 @@ export default function InsightsPage() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* ===== Top title ===== */}
-          <Text style={styles.title}>Insights</Text>
+          {/* ===== Header ===== */}
+          <View style={styles.headerWrap}>
+            <Text style={styles.title}>Insights</Text>
+            <TouchableOpacity
+              onPress={() => router.push("/profile")}
+              style={styles.avatarButton}
+            >
+              <Image
+                source={require("@/assets/images/profile/Profile.png")}
+                style={styles.avatar}
+              />
+            </TouchableOpacity>
+          </View>
 
           {/* ===== This Week / This Month Toggle ===== */}
           <View style={styles.toggleContainer}>
@@ -130,7 +151,7 @@ export default function InsightsPage() {
           <ValenceSection range={range} trend={safeTrend} />
 
           {/* ===== AI Companion Note ===== */}
-          <NoteSection note={safeNote} />
+          <NoteSection note={safeNote} author={safeNoteAuthor} />
         </ScrollView>
       )}
     </SafeAreaView>
@@ -157,9 +178,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "600",
-    textAlign: "center",
     color: "#6B4F3A",
+  },
+  headerWrap: {
+    position: "relative",
+    alignItems: "center",
     marginBottom: 16,
+  },
+  avatarButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
 
   /* Toggle */

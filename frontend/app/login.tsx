@@ -3,7 +3,6 @@ import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -23,22 +22,26 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const passwordRef = useRef<TextInput>(null);
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !loading;
 
   const handleLogin = async () => {
+    if (loading) return;
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in both fields.");
+      setError("Please fill in both fields.");
       return;
     }
 
     try {
       setLoading(true);
+      setError(null);
       await authApi.login(email.trim(), password);
       router.replace("/(tabs)");
     } catch (err: any) {
       console.error("Login error:", err);
-      Alert.alert("Login Failed", err.message || "Unable to connect.");
+      setError(err?.message || "Unable to connect.");
     } finally {
       setLoading(false);
     }
@@ -74,12 +77,16 @@ export default function LoginScreen() {
                 placeholder="your@email.com"
                 placeholderTextColor="#c6b7a6"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  if (error) setError(null);
+                }}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
+                editable={!loading}
                 // More standard autofill (varies by platform but harmless)
                 textContentType="emailAddress"
                 autoComplete="email"
@@ -92,15 +99,19 @@ export default function LoginScreen() {
               <TextInput
                 ref={passwordRef}
                 style={styles.input}
-                placeholder="••••••••••"
+                placeholder="********"
                 placeholderTextColor="#c6b7a6"
                 secureTextEntry={!showPassword}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  if (error) setError(null);
+                }}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
+                editable={!loading}
                 textContentType="password"
                 autoComplete="password"
               />
@@ -115,12 +126,13 @@ export default function LoginScreen() {
                 />
               </TouchableOpacity>
             </View>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             {/* Login button */}
             <TouchableOpacity
-              style={[styles.loginButton, loading && { opacity: 0.7 }]}
+              style={[styles.loginButton, !canSubmit && styles.buttonDisabled]}
               onPress={handleLogin}
-              disabled={loading}
+              disabled={!canSubmit}
               activeOpacity={0.85}
             >
               {loading ? (
@@ -132,7 +144,7 @@ export default function LoginScreen() {
 
             {/* Footer */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Don’t have an account? </Text>
+              <Text style={styles.footerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push("/signup")}>
                 <Text style={styles.signup}>Sign Up</Text>
               </TouchableOpacity>
@@ -219,6 +231,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     fontWeight: "600",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  errorText: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    color: "#B33A3A",
   },
 
   footer: {

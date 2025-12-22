@@ -240,7 +240,15 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
                 "persona_prompt": getattr(default_c, "persona_prompt", None),
             }
 
-    note = generate_summary_message(companion_obj, emotion_trend, emotion_counts)
+    if not entries:
+        note = ""
+    else:
+        note = generate_summary_message(companion_obj, emotion_trend, emotion_counts)
+    note_author = (
+        companion_obj.get("name")
+        if isinstance(companion_obj, dict) and companion_obj.get("name")
+        else "Companion"
+    )
 
     # ------------------------------
     # H. Return
@@ -254,4 +262,5 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
         "booster": booster,
         "stressors": stressors,
         "note": note,
+        "note_author": note_author,
     }
