@@ -1,6 +1,34 @@
 from datetime import date, datetime, timedelta
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from models import JournalEntry, User
+
+
+def _counts_by_day(db: Session, current_user: User, start: date, end: date) -> dict[str, int]:
+    start_dt = datetime.combine(start, datetime.min.time())
+    end_dt = datetime.combine(end, datetime.min.time())
+
+    rows = (
+        db.query(func.date(JournalEntry.created_at).label("day"), func.count(JournalEntry.id))
+        .filter(
+            JournalEntry.user_id == current_user.id,
+            JournalEntry.deleted == False,
+            JournalEntry.created_at >= start_dt,
+            JournalEntry.created_at < end_dt,
+        )
+        .group_by("day")
+        .all()
+    )
+
+    counts: dict[str, int] = {}
+    for day_val, cnt in rows:
+        if isinstance(day_val, date):
+            key = day_val.isoformat()
+        else:
+            key = str(day_val)
+        counts[key] = int(cnt or 0)
+
+    return counts
 
 
 # ============================================================
@@ -10,20 +38,12 @@ def build_week_calendar(db: Session, current_user: User):
     today = date.today()
     monday = today - timedelta(days=today.weekday())  # Monday
     days = [monday + timedelta(days=i) for i in range(7)]
+    counts = _counts_by_day(db, current_user, monday, monday + timedelta(days=7))
 
     result = []
 
     for d in days:
-        count = (
-            db.query(JournalEntry)
-            .filter(
-                JournalEntry.user_id == current_user.id,
-                JournalEntry.deleted == False,
-                JournalEntry.created_at >= datetime.combine(d, datetime.min.time()),
-                JournalEntry.created_at <= datetime.combine(d, datetime.max.time()),
-            )
-            .count()
-        )
+        count = counts.get(d.isoformat(), 0)
 
         if count == 0:
             paw = "none"
@@ -62,6 +82,8 @@ def build_month_calendar(db: Session, current_user: User, month_str: str):
     next_month = date(year + (mon == 12), (mon % 12) + 1, 1)
     total_days = (next_month - first_day).days
 
+    counts = _counts_by_day(db, current_user, first_day, next_month)
+
     # Build 42 calendar cells (6 weeks)
     cells = []
 
@@ -73,16 +95,7 @@ def build_month_calendar(db: Session, current_user: User, month_str: str):
     for i in range(1, total_days + 1):
         d = date(year, mon, i)
 
-        count = (
-            db.query(JournalEntry)
-            .filter(
-                JournalEntry.user_id == current_user.id,
-                JournalEntry.deleted == False,
-                JournalEntry.created_at >= datetime.combine(d, datetime.min.time()),
-                JournalEntry.created_at <= datetime.combine(d, datetime.max.time()),
-            )
-            .count()
-        )
+        count = counts.get(d.isoformat(), 0)
 
         if count == 0:
             paw = "none"

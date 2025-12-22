@@ -6,10 +6,10 @@ import { Image, StyleSheet, Text, View } from "react-native";
 export default function NoteSection({ note }: { note: string }) {
   return (
     <View style={styles.card}>
-      <View style={styles.row}>
+      <View style={styles.content}>
         <Image
-          source={require("../../assets/images/insights/note.png")} 
-          style={styles.avatar}
+          source={require("../../assets/images/insights/note.png")}
+          style={styles.icon}
         />
 
         <Text style={styles.noteText}>{note}</Text>
@@ -31,16 +31,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
 
-  row: {
-    flexDirection: "row",
+  content: {
     alignItems: "center",
   },
 
-  avatar: {
-    width: 70,
-    height: 70,
-    marginRight: 16,
-    borderRadius: 35,
+  icon: {
+    width: 48,
+    height: 48,
+    marginBottom: 12,
+    borderRadius: 24,
   },
 
   noteText: {
@@ -48,5 +47,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: "#6B4F3A",
+    textAlign: "left",
+    alignSelf: "stretch",
   },
 });

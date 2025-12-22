@@ -40,10 +40,10 @@ const LANDSCAPE_IMAGES: Record<LandscapeVariant, any> = {
 const EMPTY_STATE_IMAGE = require("../../assets/images/insights/landscape/landscape_empty_state.png");
 
 const THEME_META: Record<ThemeKey, { label: string; emoji: string }> = {
-  work: { label: "Work", emoji: "??" },     // Mountain
-  hobbies: { label: "Hobbies", emoji: "??" }, // House
-  social: { label: "Social", emoji: "??" },  // Flower
-  other: { label: "Other", emoji: "??" },    // Cloud
+  work: { label: "Work", emoji: "⛰️" },     // Mountain
+  hobbies: { label: "Hobbies", emoji: "🏡" }, // House
+  social: { label: "Social", emoji: "🌸" },  // Flower
+  other: { label: "Other", emoji: "☁️" },    // Cloud
 };
 
 
