@@ -14,7 +14,7 @@ def build_summary_prompt(companion: Optional[Dict[str, Any]], emotion_trend, top
     comp_name = companion.get("name", "Your companion") if companion else "Your companion"
     persona = companion.get("persona_prompt") if (companion and companion.get("persona_prompt")) else ""
 
-    # 默认 persona（增强 DeepSeek-Qwen 生成风格）
+    # Default persona (enhance DeepSeek-Qwen style)
     if not persona:
         persona = (
             f"You are {comp_name}, a warm, supportive emotional journaling companion. "

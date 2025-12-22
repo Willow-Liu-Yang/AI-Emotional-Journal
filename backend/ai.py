@@ -1,6 +1,6 @@
-# 一个临时的 mock AI 模块，让项目先能跑起来
+# Temporary mock AI module to keep the project runnable.
 def analyze_emotion_and_reply(text: str):
-    # 返回模拟结果，让后端不崩
+    # Return a simulated result to avoid backend errors.
     return {
         "emotion": "neutral",
         "score": 0.0,

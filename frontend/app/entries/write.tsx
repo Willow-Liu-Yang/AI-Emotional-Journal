@@ -19,7 +19,7 @@ import {
 
 import { entriesApi } from "@/api/entries";
 
-// ===== prompt 数据（必须覆盖所有会传入的 promptKey）=====
+// ===== prompt data (must cover all incoming promptKey) =====
 const PROMPTS: Record<string, { icon: any; text: string }> = {
   capture_joy: {
     icon: require("@/assets/images/icons/prompt/capture_joy.png"),
@@ -50,7 +50,7 @@ const PROMPTS: Record<string, { icon: any; text: string }> = {
 export default function WriteScreen() {
   const router = useRouter();
 
-  // 首页/PromptLibrary 传过来的 promptKey
+  // promptKey from Home/PromptLibrary
   const { promptKey } = useLocalSearchParams<{ promptKey?: string }>();
   const promptData = promptKey ? PROMPTS[promptKey] : null;
 
@@ -67,7 +67,7 @@ export default function WriteScreen() {
     try {
       setLoading(true);
 
-      // 后端只需要 content + need_ai_reply
+      // Backend only needs content + need_ai_reply
       await entriesApi.create({
         content,
         need_ai_reply: needAI,
@@ -96,7 +96,7 @@ export default function WriteScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
       >
-        {/* 点击写作区域之外，收起键盘（不包住底栏，避免影响底栏点击） */}
+        {/* Tap outside editor to dismiss keyboard (not wrapping bottom bar) */}
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View style={styles.container}>
             {/* Header */}
@@ -118,7 +118,7 @@ export default function WriteScreen() {
               </View>
             )}
 
-            {/* 编辑区域：用 flex:1 自动占满到底部栏之前 */}
+            {/* Editor area: flex:1 fills space above bottom bar */}
             <View style={styles.editorCard}>
               <TextInput
                 style={styles.editorInput}
@@ -132,12 +132,12 @@ export default function WriteScreen() {
               />
             </View>
 
-            {/* 这里加一点距离：白色编辑框 和 底部栏之间 */}
+            {/* Add some space between editor and bottom bar */}
             <View style={{ height: 10 }} />
           </View>
         </TouchableWithoutFeedback>
 
-        {/* Bottom Bar：放在正常布局里，占真实高度；键盘弹出时自动上移 */}
+        {/* Bottom Bar: in normal layout, real height; lifts with keyboard */}
         <View style={styles.bottomBar}>
           <View style={styles.aiRow}>
             <Text style={styles.aiLabel}>AI Feedback</Text>
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // 关键：让白色编辑框占满“剩余高度”（直到 Bottom Bar 之前）
+  // Key: let editor fill remaining height (up to Bottom Bar)
   editorCard: {
     flex: 1,
     backgroundColor: "#F8F2EA",

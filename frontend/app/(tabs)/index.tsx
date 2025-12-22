@@ -46,7 +46,7 @@ export default function MainPage() {
 
   return (
     <View style={styles.container}>
-      {/* 顶部日期 + 头像 */}
+      {/* Top date + avatar */}
       <View style={styles.header}>
         <Text style={styles.date}>{today}</Text>
 
@@ -66,7 +66,7 @@ export default function MainPage() {
         resizeMode="contain"
       />
 
-      {/* ✅ 居中一句话：Need... + See all */}
+      {/* Centered line: Need... + See all */}
       <View style={styles.promptHeaderCentered}>
         <Text style={styles.promptLine}>
           Need a prompt to start?
@@ -80,7 +80,7 @@ export default function MainPage() {
         </Text>
       </View>
 
-      {/* Prompt 卡片轮播 */}
+      {/* Prompt card carousel */}
       <View style={styles.carouselWrapper}>
         <ScrollView
           horizontal
@@ -145,7 +145,7 @@ export default function MainPage() {
           </View>
         </ScrollView>
 
-        {/* 圆点 */}
+        {/* Dots */}
         <View style={styles.dotsOverlay}>
           {[0, 1, 2].map((i) => (
             <View
@@ -156,7 +156,7 @@ export default function MainPage() {
         </View>
       </View>
 
-      {/* 不带 prompt 的写日记按钮 */}
+      {/* Write-journal button without prompt */}
       <TouchableOpacity
         style={styles.writeBtn}
         onPress={() => router.push("/entries/write")}
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-  // ✅ 图片更大 + 给下面留出空间（让下面部分“更靠下”）
+  // Larger image + leave space below (push lower section down)
   capyImage: {
     width: "100%",
     height: 270,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  // ✅ 这一段整体下移，并居中
+  // Move this block down and center it
   promptHeaderCentered: {
     paddingHorizontal: 22,
     marginTop: 10,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
 
-  // ✅ 继续保持 dots 有一点距离
+  // Keep some spacing from dots
   carouselWrapper: {
     marginTop: 14,
     position: "relative",

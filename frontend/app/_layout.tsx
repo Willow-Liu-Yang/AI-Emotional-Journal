@@ -15,10 +15,10 @@ export default function RootLayout() {
       
       <Stack
         screenOptions={{
-          headerShown: false,     // 全局关 header
+          headerShown: false,     // Hide header globally
         }}
       >
-        {/* 全局单页页面 */}
+        {/* Global single-page screens */}
         <Stack.Screen name="welcome" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
@@ -26,10 +26,10 @@ export default function RootLayout() {
         <Stack.Screen name="promptLibrary" />
         <Stack.Screen name="write" />
 
-        {/* ⭐ tabs 作为整个系统的子路由 */}
+        {/* Tabs as the main app sub-routes */}
         <Stack.Screen 
           name="(tabs)" 
-          options={{ headerShown: false }}  // 🔥 关键：不要替 tabs 添加 header
+          options={{ headerShown: false }}  // Key: do not add header for tabs
         />
 
         <Stack.Screen 

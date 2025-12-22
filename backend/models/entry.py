@@ -19,52 +19,52 @@ class JournalEntry(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # 所属用户
+    # Owning user
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User", back_populates="entries")
 
-    # 日记内容
+    # Journal content
     content = Column(Text, nullable=False)
 
-    # 摘要（列表页显示）
+    # Summary (shown on list page)
     summary = Column(String(300), nullable=True)
 
-    # 创建时间（UTC + tz-aware）
+    # Created time (UTC + tz-aware)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    # 情绪（六选一）
+    # Emotion (one of six)
     emotion = Column(String, nullable=True)
 
-    # 情绪强度：1=低, 2=中, 3=高
+    # Emotion intensity: 1=low, 2=mid, 3=high
     emotion_intensity = Column(Integer, nullable=True)
 
-    # ✅ 主主题（用于列表/筛选/快速展示）
-    # 值限定为：work / hobbies / social / other
+    # Primary theme (for list/filter/quick display)
+    # Value constrained to: work / hobbies / social / other
     primary_theme = Column(String(20), nullable=True)
 
-    # ✅ 主题权重分布（用于 insights 聚合）
-    # 形如：{"work":0.2,"hobbies":0.5,"social":0.1,"other":0.2}
+    # Theme score distribution (for insights aggregation)
+    # Example: {"work":0.2,"hobbies":0.5,"social":0.1,"other":0.2}
     theme_scores = Column(JSON, nullable=True)
 
-    # ✅ 不再直接存文本回复，而是通过关系访问 AIReply
+    # No longer store reply text directly; access via AIReply relationship
     ai_reply = relationship(
         "AIReply",
         back_populates="entry",
-        uselist=False,              # 一篇日记最多一条回复
+        uselist=False,              # One reply per journal entry
         cascade="all, delete-orphan",
     )
 
-    # 软删除标记
+    # Soft-delete flag
     deleted = Column(Boolean, default=False, nullable=False)
 
-    # JournalEntry 反向关系：评论
+    # JournalEntry reverse relationship: comments
     comments = relationship(
         "JournalComment",
         back_populates="entry",
         cascade="all, delete-orphan",
     )
 
-    # ⭐ 动态计算愉悦度（不存数据库）
+    # Dynamically computed pleasure score (not stored)
     @property
     def pleasure(self):
         base_scores = {

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 
-# --------------- 基础结构：模型完整字段（详细信息 / Profile 用） ---------------
+# --------------- Base structure: full model fields (detail/Profile) ---------------
 class AICompanionBase(BaseModel):
     id: int
     name: str
@@ -16,17 +16,17 @@ class AICompanionBase(BaseModel):
     theme_color: Optional[str] = None
     order_index: Optional[int] = None
 
-    # ✅ 新增：给 LLM 用的人设和行为配置
-    persona_prompt: Optional[str] = None           # 完整人设说明
+    # New: persona and behavior settings for LLM
+    persona_prompt: Optional[str] = None           # Full persona description
     reply_length_hint: str = "medium"              # short / medium / long
-    allow_suggestions: bool = True                 # 是否倾向给建议
-    is_active: bool = True                         # 是否启用（下架用）
+    allow_suggestions: bool = True                 # Whether to lean toward advice
+    is_active: bool = True                         # Enabled flag (for unlisting)
 
     class Config:
         from_attributes = True
 
 
-# --------------- 用于列表显示（更轻量） ---------------
+# --------------- For list display (lighter) ---------------
 class AICompanionSummary(BaseModel):
     id: int
     name: str
@@ -40,19 +40,19 @@ class AICompanionSummary(BaseModel):
         from_attributes = True
 
 
-# --------------- 用户选择 Companion 时用 ---------------
+# --------------- Used when user selects a companion ---------------
 class CompanionSelect(BaseModel):
     companion_id: int
 
 
-# --------------- 用于 UserOut 中返回用户的小伙伴信息 ---------------
+# --------------- Returned in UserOut for companion info ---------------
 class CompanionOut(AICompanionBase):
     pass
 
 
-# --------------- 创建自定义 AI 伴侣（POST /companions/custom） ---------------
+# --------------- Create custom AI companion (POST /companions/custom) ---------------
 class AICompanionCreate(BaseModel):
-    # key 可选，不填的话后端可以根据 name 自动生成
+    # Optional key; backend can auto-generate from name when omitted
     name: str
     key: Optional[str] = None
 
@@ -69,9 +69,9 @@ class AICompanionCreate(BaseModel):
     is_active: bool = True
 
 
-# --------------- 更新自定义 AI 伴侣（PATCH /companions/{id}） ---------------
+# --------------- Update custom AI companion (PATCH /companions/{id}) ---------------
 class AICompanionUpdate(BaseModel):
-    # 全部可选，用哪个改哪个
+    # All optional; update only what is provided
     name: Optional[str] = None
     identity_title: Optional[str] = None
     description: Optional[str] = None

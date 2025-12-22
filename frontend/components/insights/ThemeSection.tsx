@@ -40,10 +40,10 @@ const LANDSCAPE_IMAGES: Record<LandscapeVariant, any> = {
 const EMPTY_STATE_IMAGE = require("../../assets/images/insights/landscape/landscape_empty_state.png");
 
 const THEME_META: Record<ThemeKey, { label: string; emoji: string }> = {
-  work: { label: "Work", emoji: "⛰️" },     // 山
-  hobbies: { label: "Hobbies", emoji: "🏡" }, // 小房子
-  social: { label: "Social", emoji: "🌸" },  // 花
-  other: { label: "Other", emoji: "☁️" },    // 云
+  work: { label: "Work", emoji: "??" },     // Mountain
+  hobbies: { label: "Hobbies", emoji: "??" }, // House
+  social: { label: "Social", emoji: "??" },  // Flower
+  other: { label: "Other", emoji: "??" },    // Cloud
 };
 
 
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
 
   tile: {
     width: "48%",
-    borderRadius: 24, // ✅ 更圆
+    borderRadius: 24, // Rounder
     paddingVertical: 12,
     paddingHorizontal: 14,
     backgroundColor: "rgba(242, 231, 216, 0.55)",
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 5, // ✅ 更细（约三分之一）
+    height: 5, // Thinner (about one-third)
     backgroundColor: "rgba(127, 175, 134, 0.40)",
     shadowColor: "#7FAF86",
     shadowOpacity: 0.45,

@@ -52,7 +52,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    # ⭐ 注册完自动登录
+    # Auto-login after registration
     token = create_access_token(
         data={"user_id": new_user.id},
         expires_delta=timedelta(hours=1)

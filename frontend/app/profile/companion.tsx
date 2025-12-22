@@ -17,13 +17,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { authApi } from "@/api/auth";
 import { companionsApi, Companion as BaseCompanion } from "@/api/companions";
 
-// ---- 类型：在 API 基础上补上 description / avatar_key ----
+// ---- Types: extend API with description / avatar_key ----
 type Companion = BaseCompanion & {
   description?: string | null;
   avatar_key?: string | null;
 };
 
-// 静态图片映射
+// Static image mapping
 const companionImages: Record<string, any> = {
   luna: require("@/assets/images/profile/luna.png"),
   sol: require("@/assets/images/profile/sol.png"),
@@ -49,7 +49,7 @@ export default function CompanionSelectScreen() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<number | null>(null);
 
-  // 加载用户 + 伴侣列表
+  // Load user + companion list
   useEffect(() => {
     let active = true;
 
@@ -86,7 +86,7 @@ export default function CompanionSelectScreen() {
     setSavingId(id);
     try {
       await companionsApi.select(id);
-      setCurrentId(id); // 只更新本地选中态，不自动返回
+      setCurrentId(id); // Only update local selection, do not auto-return
 
       Alert.alert("Updated", "Your AI Companion has been updated.");
     } catch (err) {
@@ -124,7 +124,7 @@ export default function CompanionSelectScreen() {
 
         <Text style={styles.headerTitle}>My AI Companion</Text>
 
-        {/* 右侧占位，让标题居中 */}
+        {/* Right placeholder to center title */}
         <View style={{ width: 40 }} />
       </View>
 
@@ -154,7 +154,7 @@ export default function CompanionSelectScreen() {
               onPress={() => handleSelect(c.id)}
               disabled={disabled}
             >
-              {/* 顶部：头像 + 文本 */}
+              {/* Top: avatar + text */}
               <View style={styles.cardTopRow}>
                 <View style={styles.avatarWrapper}>
                   <Image source={img} style={styles.avatar} />
@@ -163,7 +163,7 @@ export default function CompanionSelectScreen() {
                 <View style={styles.cardTextWrapper}>
                   <View style={styles.cardNameRow}>
                     <Text style={styles.cardName}>{c.name}</Text>
-                    {/* 👉 不要点号了 */}
+                    {/* Remove the dot */}
                   </View>
 
                   {c.identity_title ? (
@@ -176,7 +176,7 @@ export default function CompanionSelectScreen() {
                 </View>
               </View>
 
-              {/* 底部：整行标签，单独一行 */}
+              {/* Bottom: full-width tags, single row */}
               <View style={styles.tagsRow}>
                 {(c.tags || []).map((t, i) => (
                   <View key={i} style={styles.tag}>
@@ -185,7 +185,7 @@ export default function CompanionSelectScreen() {
                 ))}
               </View>
 
-              {/* 右上角选中勾 */}
+              {/* Top-right selected checkmark */}
               {selected && (
                 <View style={styles.checkWrapper}>
                   <Ionicons
@@ -199,7 +199,7 @@ export default function CompanionSelectScreen() {
           );
         })}
 
-        {/* 自定义按钮（占位） */}
+        {/* Custom button (placeholder) */}
         <TouchableOpacity
           style={styles.customBtn}
           activeOpacity={0.9}
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(90,62,36,0.8)",
   },
 
-  // 顶部：头像+文字
+  // Top: avatar + text
   cardTopRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     color: "#4A2C22",
   },
 
-  // 底部标签，单独一整行
+  // Bottom tags, full-width row
   tagsRow: {
     flexDirection: "row",
     flexWrap: "wrap",

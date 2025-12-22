@@ -29,7 +29,7 @@ export default function NicknamePage() {
     try {
       setLoading(true);
 
-      // 读取 token（key 必须和 signup 一致）
+      // Read token (key must match signup)
       const token = await AsyncStorage.getItem("token");
       console.log("TOKEN in nickname:", token);
 
@@ -44,7 +44,7 @@ export default function NicknamePage() {
 
       Alert.alert("Success", "Nickname set successfully!");
 
-      // 昵称设置成功 → 跳转主界面 tabs
+      // Nickname set successfully -> go to main tabs
       router.replace("/(tabs)");
 
     } catch (err: any) {

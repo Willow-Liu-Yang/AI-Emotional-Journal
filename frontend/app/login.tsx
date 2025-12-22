@@ -49,7 +49,7 @@ export default function LoginScreen() {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        // iOS 上给一点点 offset，避免“刚好遮住”
+        // Add a small offset on iOS to avoid overlap
         keyboardVerticalOffset={Platform.OS === "ios" ? 6 : 0}
       >
         <ScrollView
@@ -80,7 +80,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
-                // 更标准的 autofill（不同平台支持程度不同，但不会有害）
+                // More standard autofill (varies by platform but harmless)
                 textContentType="emailAddress"
                 autoComplete="email"
               />
@@ -152,10 +152,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#F6E9D8",
   },
 
-  // 关键：flexGrow 让大屏不塌，小屏能滚动
+  // Key: flexGrow keeps large screens from collapsing and allows small screens to scroll
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 24, // 键盘弹起时底部留点余量
+    paddingBottom: 24, // Leave some space at bottom when keyboard shows
   },
 
   container: {

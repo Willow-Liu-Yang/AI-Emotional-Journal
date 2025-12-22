@@ -1,7 +1,7 @@
 # schemas/__init__.py
 
 # -------------------------------
-# 用户相关
+# User-related
 # -------------------------------
 from .user import (
     UserCreate,
@@ -12,29 +12,29 @@ from .user import (
 )
 
 # -------------------------------
-# 日记 & AI 回复相关
+# Journal and AI reply related
 # -------------------------------
 from .entry import (
     EntryCreate,
     EntryOut,
     EntrySummary,
-    AIReplyOut,      # ✅ 新增：AI 回复输出
+    AIReplyOut,      # New: AI reply output
 )
 
 # -------------------------------
-# AI Companion（人设）
+# AI Companion (persona)
 # -------------------------------
 from .companion import (
     AICompanionSummary,
     CompanionSelect,
     CompanionOut,
     AICompanionBase,
-    AICompanionCreate,   # ✅ 新增：自定义创建用
-    AICompanionUpdate,   # ✅ 新增：自定义更新用
+    AICompanionCreate,   # New: for custom creation
+    AICompanionUpdate,   # New: for custom update
 )
 
 # -------------------------------
-# 评论相关
+# Comment-related
 # -------------------------------
 from .comment import (
     CommentCreate,
@@ -42,7 +42,7 @@ from .comment import (
 )
 
 # -------------------------------
-# 身份认证（如果存在 auth.py）
+# Authentication (if auth.py exists)
 # -------------------------------
 try:
     from .auth import Token, TokenData

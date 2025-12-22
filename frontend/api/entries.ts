@@ -1,11 +1,11 @@
 // frontend/api/entries.ts
 import { apiRequest } from "./index";
 
-// ============== 类型定义 ==============
+// ============== Type definitions ==============
 
 export type EntryTheme = "job" | "hobbies" | "social" | "other";
 
-// 后端 AIReplyOut 映射
+// Backend AIReplyOut mapping
 export interface AIReply {
   id: number;
   entry_id: number;
@@ -16,18 +16,18 @@ export interface AIReply {
   created_at: string;
 }
 
-// 后端 EntrySummary 映射（列表用）
+// Backend EntrySummary mapping (list view)
 export interface EntrySummary {
   id: number;
   summary: string;
   created_at: string;
   emotion?: string | null;
 
-  // ✅ 新增：主主题（列表页可用于展示/筛选）
+  // New: primary theme (for list display/filter)
   primary_theme?: EntryTheme | null;
 }
 
-// 后端 EntryOut 映射（详情用）
+// Backend EntryOut mapping (detail view)
 export interface Entry {
   id: number;
   user_id: number;
@@ -38,19 +38,19 @@ export interface Entry {
   emotion?: string | null;
   emotion_intensity?: number | null;
 
-  // ✅ 新增：主主题 + 主题分布（insights 聚合用）
+  // New: primary theme + distribution (for insights aggregation)
   primary_theme?: EntryTheme | null;
 
-  // ✅ 更稳：允许缺少某些 key（历史数据 / fallback）
+  // More robust: allow missing keys (legacy data/fallback)
   theme_scores?: Partial<Record<EntryTheme, number>> | null;
 
-  // ⭐ 现在是对象，不是 string 了
+  // Now an object, not a string
   ai_reply?: AIReply | null;
 
   pleasure: number;
 }
 
-// 评论类型
+// Comment type
 export interface EntryComment {
   id: number;
   content: string;
@@ -72,7 +72,7 @@ export const entriesApi = {
     if (params?.to_date) query.append("to_date", params.to_date);
 
     const qs = query.toString();
-    // ✅ 保持带尾斜杠，避免重定向导致 Authorization header 丢失
+    // Keep trailing slash to avoid redirect losing Authorization header
     const url = qs ? `/entries/?${qs}` : "/entries/";
 
     return apiRequest(url, { method: "GET" });
@@ -97,10 +97,10 @@ export const entriesApi = {
   },
 
   // ===============================
-  // AI 回复相关
+  // AI reply related
   // ===============================
 
-  /** 让当前 AI 伴侣给某条日记生成 / 获取回复 */
+  /** Ask the current AI companion to generate/get a reply for an entry */
   async generateAiReply(
     entryId: number,
     options?: { forceRegenerate?: boolean }
@@ -110,15 +110,15 @@ export const entriesApi = {
   },
 
   // ===============================
-  // 自己给自己的留言（评论）部分
+  // Self-notes (comments) section
   // ===============================
 
-  /** 获取某条日记下的所有留言（按时间升序） */
+  /** Get all notes under an entry (ascending by time) */
   async getComments(entryId: number): Promise<EntryComment[]> {
     return apiRequest(`/entries/${entryId}/comments/`, { method: "GET" });
   },
 
-  /** 给某条日记添加一条留言（自己对自己的 note） */
+  /** Add a note to an entry (self note) */
   async addComment(entryId: number, content: string): Promise<EntryComment> {
     return apiRequest(`/entries/${entryId}/comments/`, {
       method: "POST",
@@ -126,7 +126,7 @@ export const entriesApi = {
     });
   },
 
-  /** 删除一条留言（只有作者本人才会成功，后端做权限判断） */
+  /** Delete a note (only the author succeeds; backend checks permission) */
   async deleteComment(entryId: number, commentId: number) {
     return apiRequest(`/entries/${entryId}/comments/${commentId}`, {
       method: "DELETE",

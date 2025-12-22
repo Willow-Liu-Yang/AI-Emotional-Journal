@@ -8,7 +8,7 @@ from schemas.companion import CompanionOut
 
 
 # -------------------------------
-# 用户注册输入
+# User signup input
 # -------------------------------
 class UserCreate(BaseModel):
     email: EmailStr
@@ -16,7 +16,7 @@ class UserCreate(BaseModel):
 
 
 # -------------------------------
-# 用户登录输入
+# User login input
 # -------------------------------
 class UserLogin(BaseModel):
     email: EmailStr
@@ -24,18 +24,18 @@ class UserLogin(BaseModel):
 
 
 # -------------------------------
-# 用户输出（给前端）
-# 包含 AI 小伙伴信息
+# User output (to frontend)
+# Includes AI companion info
 # -------------------------------
 class UserOut(BaseModel):
     id: int
     username: Optional[str] = None
     email: EmailStr
 
-    # 当前绑定的 AI 伴侣 id（可选，方便前端直接用）
+    # Current bound companion id (optional; easier for frontend)
     companion_id: Optional[int] = None
 
-    # 当前绑定的 AI 伴侣详情
+    # Current bound companion details
     companion: Optional[CompanionOut] = None
 
     created_at: datetime
@@ -45,14 +45,14 @@ class UserOut(BaseModel):
 
 
 # -------------------------------
-# /users/me 输出
+# /users/me output
 # -------------------------------
 class UserMe(UserOut):
     pass
 
 
 # -------------------------------
-# 用户名更新
+# Username update
 # -------------------------------
 class UsernameUpdate(BaseModel):
     username: str

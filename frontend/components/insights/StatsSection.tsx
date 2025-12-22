@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: "32%",
-    backgroundColor: "#FFF6EA", // ✅ 跟 CalendarSection card 一致
+    backgroundColor: "#FFF6EA", // Match CalendarSection card
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 10,

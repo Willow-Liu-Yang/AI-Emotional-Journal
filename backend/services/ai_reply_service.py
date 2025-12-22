@@ -11,18 +11,16 @@ from models import JournalEntry, User, AICompanion, AIReply
 from core.ai_client import call_siliconflow
 
 
-# 固定六种情绪
+# Fixed six emotions
 VALID_EMOTIONS = {"joy", "calm", "tired", "anxiety", "sadness", "anger"}
 
-# 固定四类主题（MVP）— ✅ work/hobbies/social/other
+# Fixed four themes (MVP) - work/hobbies/social/other
 VALID_THEMES = {"work", "hobbies", "social", "other"}
 THEME_KEYS_ORDER = ["work", "hobbies", "social", "other"]
 
 
 def _get_companion_or_default(db: Session, current_user: User) -> AICompanion:
-    """
-    获取用户选择的 AI 伴侣；没有就 fallback 到默认伴侣 (id=1, is_active=True)。
-    """
+    """Get the user-selected AI companion; fallback to default (id=1, is_active=True)."""
     companion: Optional[AICompanion] = getattr(current_user, "companion", None)
     if companion:
         return companion
@@ -38,13 +36,12 @@ def _get_companion_or_default(db: Session, current_user: User) -> AICompanion:
 
 
 def build_prompt_for_entry(entry: JournalEntry, companion: AICompanion, analysis_only: bool) -> str:
-    """
-    把日记内容 + AI 伴侣的人设，拼成一次调用 LLM 的 prompt。
+    """Combine journal content + companion persona into a single LLM prompt.
 
-    - analysis_only=True: 只做分析（emotion/intensity/theme），reply 必须输出空字符串
-    - analysis_only=False: 生成回复 + 分析（reply + emotion + intensity + theme）
+    - analysis_only=True: analysis only (emotion/intensity/theme); reply must be empty string
+    - analysis_only=False: generate reply + analysis (reply + emotion + intensity + theme)
 
-    输出统一为一个 JSON，字段结构固定，便于解析与写库。
+    Output is a single JSON with fixed fields for parsing and storage.
     """
 
     persona = companion.persona_prompt or (
@@ -127,21 +124,21 @@ The user's journal entry is:
 
 def _extract_json(text: str) -> Dict[str, Any]:
     """
-    尝试从 LLM 返回中提取 JSON：
-    1) 直接整个 text 当 JSON
-    2) ```json ... ``` 代码块
-    3) 第一个 {...} 包裹内容
-    失败就把全部文本当成 reply，用空 emotion/intensity/theme。
+    Try to extract JSON from LLM output:
+    1) Use full text as JSON
+    2) ```json ... ``` code block
+    3) First {...} block
+    On failure, treat entire text as reply with empty emotion/intensity/theme.
     """
     text = text.strip()
 
-    # 1) 直接 parse
+    # 1) Direct parse
     try:
         return json.loads(text)
     except Exception:
         pass
 
-    # 2) ```json ... ``` 块
+    # 2) ```json ... ``` block
     m = re.search(r"```json(.*?)```", text, re.DOTALL | re.IGNORECASE)
     if m:
         inner = m.group(1).strip()
@@ -150,7 +147,7 @@ def _extract_json(text: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # 3) 第一个大括号
+    # 3) First brace block
     m2 = re.search(r"\{.*\}", text, re.DOTALL)
     if m2:
         candidate = m2.group(0)
@@ -159,7 +156,7 @@ def _extract_json(text: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # 完全失败：退化
+    # Complete failure: fallback
     return {
         "reply": text,
         "emotion": None,
@@ -184,9 +181,9 @@ def _coerce_float(x: Any) -> Optional[float]:
 
 def _clean_and_normalize_theme_scores(raw_scores: Any) -> Tuple[Optional[Dict[str, float]], Optional[str]]:
     """
-    接受 LLM 的 raw theme_scores，输出：
-    - 归一化后的 theme_scores（四个 key 都在，sum≈1）
-    - primary_theme（最大值对应 key）
+    Accept raw theme_scores from LLM and output:
+    - normalized theme_scores (all four keys present, sum~1)
+    - primary_theme (key with max value)
     """
     if not isinstance(raw_scores, dict):
         return None, None
@@ -203,11 +200,11 @@ def _clean_and_normalize_theme_scores(raw_scores: Any) -> Tuple[Optional[Dict[st
         scores = {"work": 0.0, "hobbies": 0.0, "social": 0.0, "other": 1.0}
         return scores, "other"
 
-    # 归一化
+    # Normalize
     for k in scores:
         scores[k] = round(scores[k] / total, 6)
 
-    # 修正 round 误差（差额补到 other）
+    # Fix rounding error (add delta to other)
     total2 = sum(scores.values())
     diff = round(1.0 - total2, 6)
     if abs(diff) > 0:
@@ -246,8 +243,7 @@ def _clean_primary_theme(primary_theme: Any) -> Optional[str]:
 
 
 def call_llm_for_reply_emotion_and_theme(prompt: str) -> Dict[str, Any]:
-    """
-    返回：
+    """Return:
     - reply: str
     - emotion: str|None
     - intensity: int|None
@@ -291,9 +287,7 @@ def _apply_analysis_to_entry(
     theme_scores: Optional[Dict[str, float]],
     primary_theme: Optional[str],
 ) -> None:
-    """
-    把 AI 分析结果写回 entry。
-    """
+    """Write AI analysis results back to the entry."""
     if emotion:
         entry.emotion = emotion
     if intensity:
@@ -311,10 +305,9 @@ def analyze_entry_for_entry(
     current_user: User,
     force_regenerate: bool = False,
 ) -> JournalEntry:
-    """
-    只做分析（emotion/intensity/theme），不生成 AIReply。
-    - 默认：如果 entry 已经有分析 且不强制，直接返回
-    - force_regenerate=True：重新分析并覆盖
+    """Analysis only (emotion/intensity/theme), no AIReply.
+    - Default: if entry already has analysis and not forced, return directly
+    - force_regenerate=True: re-analyze and overwrite
     """
     entry: Optional[JournalEntry] = (
         db.query(JournalEntry)
@@ -356,9 +349,7 @@ def generate_ai_reply_for_entry(
     current_user: User,
     force_regenerate: bool = False,
 ) -> AIReply:
-    """
-    生成 AI 回复 + 分析（emotion/intensity/theme）。
-    """
+    """Generate AI reply + analysis (emotion/intensity/theme)."""
     entry: Optional[JournalEntry] = (
         db.query(JournalEntry)
         .filter(

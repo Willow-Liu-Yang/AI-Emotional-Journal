@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from models import JournalEntry, AICompanion, User
 from .ai_summary_service import generate_summary_message
 
-# 引入 Calendar 生成逻辑
+# Import calendar generation logic
 from .calendar_service import build_week_calendar, build_month_calendar
 
 
@@ -23,7 +23,7 @@ VALENCE = {
     "anger": -2,
 }
 
-# ✅ 统一主题 key：work/hobbies/social/other（不再出现 job）
+# Use unified theme keys: work/hobbies/social/other (no more job)
 THEME_KEYS = ["work", "hobbies", "social", "other"]
 
 
@@ -127,7 +127,7 @@ def _normalize_theme_scores(scores_dict: Any) -> Optional[Dict[str, float]]:
     for k in cleaned:
         cleaned[k] = cleaned[k] / total
 
-    # 修正浮点误差，把差额补到 other
+    # Fix floating error by adding delta to other
     total2 = sum(cleaned.values())
     diff = 1.0 - total2
     if abs(diff) > 1e-9:
@@ -140,19 +140,17 @@ def _normalize_theme_scores(scores_dict: Any) -> Optional[Dict[str, float]]:
 # Main aggregation
 # -----------------------------
 def aggregate_insights(db: Session, current_user: User, range_type: str):
-    """
-    聚合统计数据 + 主题聚合（从 DB 读 theme_scores） + 情绪趋势 + Calendar + AI Summary
-    """
+    """Aggregate stats + theme distribution (from DB theme_scores) + emotion trend + Calendar + AI Summary."""
     user_id = current_user.id
 
-    # 1) 时间范围（UTC-aware，[start, end)）
+    # 1) Time range (UTC-aware, [start, end))
     start, end = get_datetime_range_utc(range_type)
 
     # 2) entries
     entries = get_entries(db, user_id, start, end)
 
     # ------------------------------
-    # A. 基础统计
+    # A. Basic stats
     # ------------------------------
     content_joined = " ".join([e.content for e in entries])
     stats = {
@@ -162,7 +160,7 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
     }
 
     # ------------------------------
-    # B. 情绪分布
+    # B. Emotion distribution
     # ------------------------------
     emotion_counts: Dict[str, int] = {}
     for e in entries:
@@ -170,7 +168,7 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
             emotion_counts[e.emotion] = emotion_counts.get(e.emotion, 0) + 1
 
     # ------------------------------
-    # C. 情绪价趋势（按天）
+    # C. Emotion valence trend (daily)
     # ------------------------------
     trend: Dict[str, int] = {}
     for e in entries:
@@ -181,9 +179,9 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
     emotion_trend = [{"date": d, "valence": v} for d, v in sorted(trend.items())]
 
     # ------------------------------
-    # D. 主题聚合（Inner Landscape）
+    # D. Theme aggregation (Inner Landscape)
     # - entries=0 -> themes={}
-    # - entries>0 但都无有效 theme_scores -> themes={}
+    # - entries>0 but no valid theme_scores -> themes={}
     # ------------------------------
     if not entries:
         theme_distribution: Dict[str, float] = {}
@@ -206,7 +204,7 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
             theme_distribution = {k: round(theme_sum[k] / total_theme, 3) for k in THEME_KEYS}
 
     # ------------------------------
-    # E. Calendar（周视图 / 月视图）
+    # E. Calendar (weekly / monthly)
     # ------------------------------
     if range_type == "week":
         calendar_data = build_week_calendar(db, current_user)
@@ -215,7 +213,7 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
         calendar_data = build_month_calendar(db, current_user, month_str)
 
     # ------------------------------
-    # F. Mood Booster & Stressors (占位)
+    # F. Mood Booster & Stressors (placeholder)
     # ------------------------------
     booster = ["Morning Run", "Coffee Time", "Drawing"]
     stressors = ["Deadlines", "Rainy days"]
@@ -249,7 +247,7 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
     # ------------------------------
     return {
         "stats": stats,
-        "themes": theme_distribution,  # {} 时前端显示 empty state
+        "themes": theme_distribution,  # When {}, frontend shows empty state
         "emotions": emotion_counts,
         "valence_trend": emotion_trend,
         "calendar": calendar_data,

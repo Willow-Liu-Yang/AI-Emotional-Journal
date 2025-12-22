@@ -19,7 +19,7 @@ import {
 import { entriesApi } from "@/api/entries";
 import type { Entry, EntryComment } from "@/api/entries";
 
-// 根据 companion_id 映射头像 + 名字 + 副标题
+// Map avatar + name + subtitle by companion_id
 const COMPANION_UI: Record<number, { name: string; subtitle: string; avatar: any }> =
   {
     1: {
@@ -47,7 +47,7 @@ export default function EntryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ⭐ 默认收起 Mood Summary
+  // Default: collapse Mood Summary
   const [showMoodSummary, setShowMoodSummary] = useState(false);
 
   const [reflection, setReflection] = useState("");
@@ -56,7 +56,7 @@ export default function EntryDetailScreen() {
   const [comments, setComments] = useState<EntryComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
 
-  // 发送按钮缩放动画
+  // Send button scale animation
   const sendScale = useRef(new Animated.Value(1)).current;
 
   const onSendPressIn = () => {
@@ -77,7 +77,7 @@ export default function EntryDetailScreen() {
     }).start();
   };
 
-  // 拉取详情
+  // Fetch details
   useEffect(() => {
     if (!entryId) return;
 
@@ -99,7 +99,7 @@ export default function EntryDetailScreen() {
     };
   }, [entryId]);
 
-  // 拉取评论列表（给自己的留言）
+  // Fetch comment list (self-notes)
   useEffect(() => {
     if (!entryId) return;
 
@@ -121,7 +121,7 @@ export default function EntryDetailScreen() {
     };
   }, [entryId]);
 
-  // 发送“给自己的留言”
+  // Send a self-note
   async function handleSendReflection() {
     const text = reflection.trim();
     if (!text || !entryId) return;
@@ -138,7 +138,7 @@ export default function EntryDetailScreen() {
     }
   }
 
-  // 删除某条留言
+  // Delete a note
   function handleDeleteComment(commentId: number) {
     if (!entryId) return;
 
@@ -178,7 +178,7 @@ export default function EntryDetailScreen() {
       minute: "2-digit",
     });
 
-  // 右上角菜单：分享 + 删除整篇日记
+  // Top-right menu: share + delete entry
   const handleShare = () => {
     Alert.alert("Share", "Sharing will be available in a later version.");
   };
@@ -192,7 +192,7 @@ export default function EntryDetailScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await entriesApi.remove(entry.id); // 软删除
+            await entriesApi.remove(entry.id); // Soft delete
             router.back();
           } catch (e: any) {
             Alert.alert("Error", e?.message || "Failed to delete entry.");
@@ -211,13 +211,13 @@ export default function EntryDetailScreen() {
     ]);
   };
 
-  // ------- AI 卡片用到的 UI 数据 -------
+  // ------- UI data for the AI card -------
   const companionId = entry?.ai_reply?.companion_id ?? 1;
   const companionUI = COMPANION_UI[companionId] ?? COMPANION_UI[1];
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F2E4D2" }}>
-      {/* Header：和 write.tsx 一致，但多一行时间 */}
+      {/* Header: same as write.tsx, with extra time row */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#6A4A2A" />
@@ -228,7 +228,7 @@ export default function EntryDetailScreen() {
           <Text style={styles.timeText}>{timeLabel ?? ""}</Text>
         </View>
 
-        {/* 右上角菜单：分享 + 删除 */}
+        {/* Top-right menu: share + delete */}
         <TouchableOpacity onPress={handleMenuPress} disabled={!entry}>
           <Ionicons name="ellipsis-horizontal" size={20} color="#6A4A2A" />
         </TouchableOpacity>
@@ -254,12 +254,12 @@ export default function EntryDetailScreen() {
 
         {entry && !loading && (
           <>
-            {/* 日记内容卡片 */}
+            {/* Journal content card */}
             <View style={styles.entryCard}>
               <Text style={styles.entryText}>{entry.content}</Text>
             </View>
 
-            {/* AI 回复卡片（有 ai_reply 才显示） */}
+            {/* AI reply card (only when ai_reply exists) */}
             {entry.ai_reply && (
               <View style={styles.aiCard}>
                 <View style={styles.aiHeaderRow}>
@@ -278,7 +278,7 @@ export default function EntryDetailScreen() {
               </View>
             )}
 
-            {/* Mood Summary 卡片（默认收起） */}
+            {/* Mood Summary card (collapsed by default) */}
             <View style={styles.moodCard}>
               <TouchableOpacity
                 style={styles.moodToggleRow}
@@ -311,7 +311,7 @@ export default function EntryDetailScreen() {
               )}
             </View>
 
-            {/* 自己给自己的留言：圆形胶囊输入框 */}
+            {/* Self-notes: rounded capsule input */}
             <View style={styles.reflectionBar}>
               <TextInput
                 style={styles.reflectionInput}
@@ -344,7 +344,7 @@ export default function EntryDetailScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* 留言列表 */}
+            {/* Notes list */}
             {commentsLoading && (
               <View style={{ marginTop: 12 }}>
                 <ActivityIndicator size="small" color="#6A4A2A" />
@@ -365,7 +365,7 @@ export default function EntryDetailScreen() {
   );
 }
 
-// 把情绪 + 强度变成人类可读
+// Convert emotion + intensity to human-readable
 function formatEmotionWithIntensity(
   emotion: string | null,
   intensity: number | null
@@ -384,7 +384,7 @@ function formatEmotionWithIntensity(
   return label ? `${base} · ${label} intensity` : base;
 }
 
-// 单条留言卡片
+// Single note card
 function CommentCard({
   comment,
   onDelete,
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // 日记内容卡片
+  // Journal content card
   entryCard: {
     backgroundColor: "#F8F2EA",
     borderRadius: 18,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // AI 回复
+  // AI reply
   aiCard: {
     backgroundColor: "#EED8B8",
     borderRadius: 18,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Mood Summary 区域（更方）
+  // Mood Summary area (squarer)
   moodCard: {
     backgroundColor: "#FAF1E5",
     borderRadius: 12,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // 圆形输入框
+  // Rounded input
   reflectionBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // 留言卡片：和 entryCard 一致风格
+  // Note card: same style as entryCard
   commentCard: {
     backgroundColor: "#F8F2EA",
     borderRadius: 18,

@@ -44,7 +44,7 @@ export default function InsightsPage() {
     loadData();
   }, [range]);
 
-  // ✅ 兜底，防止 section 因为 undefined/null 而不渲染
+  // Fallback to avoid sections not rendering when undefined/null
   const safe = data ?? {};
   const safeStats = safe.stats ?? { entries: 0, words: 0, active_days: 0 };
   const safeThemes = safe.themes ?? {};
@@ -74,7 +74,7 @@ export default function InsightsPage() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* ===== 顶部标题 ===== */}
+          {/* ===== Top title ===== */}
           <Text style={styles.title}>Insights</Text>
 
           {/* ===== This Week / This Month Toggle ===== */}
@@ -147,10 +147,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ✅ “模式1”关键：内容间距写在 contentContainerStyle
+  // Key for layout 1: spacing lives in contentContainerStyle
   content: {
     paddingHorizontal: 20,
-    paddingTop: 12, // 仅视觉留白，不承担安全区职责
+    paddingTop: 12, // Visual spacing only, not for safe area
     paddingBottom: 18,
   },
 

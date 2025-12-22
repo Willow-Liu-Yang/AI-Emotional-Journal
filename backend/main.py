@@ -10,7 +10,7 @@ import startup
 from routers import user, system, entries, companion, comments, stats, insights, calendar
 
 # ---------------------------------------
-# 创建 app（必须放最前）
+# Create app (must be first)
 # ---------------------------------------
 app = FastAPI(
     title="AI Emotional Journal API",
@@ -18,7 +18,7 @@ app = FastAPI(
 )
 
 # ---------------------------------------
-# 注册路由（必须在 openapi 前）
+# Register routes (must be before OpenAPI)
 # ---------------------------------------
 app.include_router(user.router)
 app.include_router(entries.router)
@@ -30,7 +30,7 @@ app.include_router(insights.router)
 app.include_router(calendar.router)
 
 # ---------------------------------------
-# 启动事件扫描
+# Startup event scan
 # ---------------------------------------
 for _, module_name, _ in pkgutil.iter_modules(startup.__path__):
     module = __import__(f"startup.{module_name}", fromlist=["register_startup_event"])
@@ -38,12 +38,12 @@ for _, module_name, _ in pkgutil.iter_modules(startup.__path__):
         module.register_startup_event(app)
 
 # ---------------------------------------
-# 创建数据库
+# Create database
 # ---------------------------------------
 Base.metadata.create_all(bind=engine)
 
 # ---------------------------------------
-# 自定义 Swagger（必须在 include_router 之后）
+# Custom Swagger (must be after include_router)
 # ---------------------------------------
 def custom_openapi():
     if app.openapi_schema:
@@ -64,7 +64,7 @@ def custom_openapi():
         }
     }
 
-    # ⭐⭐⭐ 关键：全局启用 BearerAuth
+    # Key: enable BearerAuth globally
     openapi_schema["security"] = [{"HTTPBearer": []}]
 
     app.openapi_schema = openapi_schema

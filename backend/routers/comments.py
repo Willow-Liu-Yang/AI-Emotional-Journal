@@ -14,12 +14,12 @@ router = APIRouter(
 
 
 # -------------------------------
-# 获取某条日记的评论列表
+# Get comment list for a journal entry
 # -------------------------------
 @router.get("/", response_model=list[CommentOut])
 def list_comments(entry_id: int, 
                   db: Session = Depends(get_db),
-                  current_user: User = Depends(get_current_user)):  # 登录用户可查看
+                  current_user: User = Depends(get_current_user)):  # Only logged-in users can view
     entry = db.query(JournalEntry).filter(JournalEntry.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
@@ -34,7 +34,7 @@ def list_comments(entry_id: int,
 
 
 # -------------------------------
-# 创建评论
+# Create a comment
 # -------------------------------
 @router.post("/", response_model=CommentOut)
 def create_comment(entry_id: int,
@@ -60,7 +60,7 @@ def create_comment(entry_id: int,
 
 
 # -------------------------------
-# 删除评论（仅作者可删除）
+# Delete a comment (author only)
 # -------------------------------
 @router.delete("/{comment_id}")
 def delete_comment(entry_id: int,
@@ -73,7 +73,7 @@ def delete_comment(entry_id: int,
     if not comment or comment.deleted:
         raise HTTPException(status_code=404, detail="Comment not found")
 
-    # 权限：只能删除自己的
+    # Permission: can only delete your own
     if comment.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not allowed to delete this comment")
 

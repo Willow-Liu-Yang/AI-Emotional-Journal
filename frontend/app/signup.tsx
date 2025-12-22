@@ -22,7 +22,7 @@ import {
 export default function Signup() {
   const { height: screenH } = useWindowDimensions();
 
-  // 小屏（例如 iPhone SE）更紧凑一些
+  // More compact for small screens (e.g., iPhone SE)
   const compact = useMemo(() => screenH < 740, [screenH]);
 
   const [email, setEmail] = useState<string>("");
@@ -75,13 +75,13 @@ export default function Signup() {
           compact ? styles.containerCompact : null,
         ]}
       >
-        {/* 插图 */}
+        {/* Illustration */}
         <Image
           source={require("../assets/images/login/bear.png")}
           style={[styles.illustration, compact && styles.illustrationCompact]}
         />
 
-        {/* 标题：放在图片下面，和 Login 对齐 */}
+        {/* Title: below image, aligned with Login */}
         <Text style={[styles.headerText, compact && styles.headerTextCompact]}>
           Let&apos;s get cozy.
         </Text>
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 56, // 比之前 70 更适合“先图后标题”的结构
+    paddingTop: 56, // Better than 70 for image-first layout
     paddingBottom: 40,
     alignItems: "center",
     justifyContent: "flex-start",

@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
- * 自动获取本机局域网 IP
+ * Auto-detect local LAN IP
  */
 const hostUri = Constants.expoConfig?.hostUri;
 const LAN_IP = hostUri?.split(":")[0] ?? "localhost";
@@ -17,10 +17,10 @@ console.log("🌐 Using API_URL:", API_URL);
 
 /**
  * ============================================
- *  Token 管理（关键：与 signup 使用相同的 key）
+ * Token management (key must match signup)
  * ============================================
  */
-const TOKEN_KEY = "token";    // ← ← ← 修复在这里！！！
+const TOKEN_KEY = "token";    // Keep consistent with signup key
 
 export async function setToken(token: string) {
   await AsyncStorage.setItem(TOKEN_KEY, token);
@@ -36,7 +36,7 @@ export async function clearToken() {
 
 /**
  * ============================================
- *  API 主请求方法（带 token）
+ * Main API request helper (with token)
  * ============================================
  */
 export async function apiRequest(

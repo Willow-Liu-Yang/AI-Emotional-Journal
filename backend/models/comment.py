@@ -8,19 +8,19 @@ class JournalComment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # 评论属于哪个日记
+    # Which journal entry this comment belongs to
     entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=False)
     entry = relationship("JournalEntry", back_populates="comments")
 
-    # 评论作者
+    # Comment author
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User")
 
-    # 评论内容
+    # Comment content
     content = Column(Text, nullable=False)
 
-    # 创建时间
+    # Created time
     created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)
 
-    # 是否软删除
+    # Soft-delete flag
     deleted = Column(Boolean, default=False, nullable=False)

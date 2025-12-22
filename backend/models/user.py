@@ -8,36 +8,36 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # 用户名（可为空，注册后再设置）
+    # Username (nullable; set after signup)
     username = Column(String(50), nullable=True)
 
-    # 用户邮箱（唯一）
+    # User email (unique)
     email = Column(String, unique=True, nullable=False)
 
-    # 加密后密码（必填）
+    # Hashed password (required)
     password = Column(String, nullable=False)
 
     # ----------------------------------------
-    # 当前选择的 AI 小伙伴
-    # 默认绑定 Luna（id = 1）
+    # Currently selected AI companion
+    # Default bind to Luna (id = 1)
     # ----------------------------------------
     companion_id = Column(
         Integer,
         ForeignKey("ai_companions.id"),
         nullable=True,
-        default=1,          # Python 端默认值
-        server_default="1", # 数据库端默认值
+        default=1,          # Python-side default
+        server_default="1", # DB-side default
     )
 
-    # 当前选择的 AI 伴侣（多对一：很多用户可以选同一个伴侣）
+    # Current companion (many-to-one: many users can pick one companion)
     companion = relationship(
         "AICompanion",
-        foreign_keys=[companion_id],      # ✅ 指明用哪条外键
+        foreign_keys=[companion_id],      # Specify which FK to use
         back_populates="selected_by_users",
         lazy="joined",
     )
 
-    # 我创建的自定义 AI 伴侣（系统预设的 created_by_user_id = NULL，不会出现在这里）
+    # Custom companions I created (system presets have created_by_user_id = NULL)
     custom_companions = relationship(
         "AICompanion",
         back_populates="creator",
@@ -45,17 +45,17 @@ class User(Base):
         cascade="all, delete-orphan",
     )
 
-    # 账号创建时间
+    # Account creation time
     created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)
 
-    # 与日记的关系（一对多）
+    # Relationship to journal entries (one-to-many)
     entries = relationship(
         "JournalEntry",
         back_populates="user",
         cascade="all, delete-orphan",
     )
 
-    # 我所有的 AI 回复（一对多）
+    # All my AI replies (one-to-many)
     ai_replies = relationship(
         "AIReply",
         back_populates="user",

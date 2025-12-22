@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 
-import type { Companion } from "@/api/companions"; // ✅ 复用类型
+import type { Companion } from "@/api/companions"; // Reuse type
 
 // ---------- types ----------
 type SettingsItem = {
@@ -21,7 +21,7 @@ type SettingsItem = {
   route?: string;
 };
 
-// /users/me 返回的大致结构
+// Approx structure returned by /users/me
 type CurrentUser = {
   id: number;
   username?: string | null;
@@ -80,7 +80,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
 
-  // ⭐ 每次页面获得焦点时重新拉 /users/me
+  // Refresh /users/me whenever the screen gains focus
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -132,10 +132,10 @@ export default function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
-      {/* 顶部标题栏：背景 = 整页背景色 */}
+      {/* Top header: background matches page background */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          {/* 左侧关闭按钮 */}
+          {/* Left close button */}
           <TouchableOpacity
             style={styles.closeBtn}
             onPress={() => router.back()}
@@ -148,12 +148,12 @@ export default function ProfileScreen() {
 
           <Text style={styles.headerTitle}>My Space</Text>
 
-          {/* 右侧占位，用来让标题居中 */}
+          {/* Right placeholder to center title */}
           <View style={{ width: 48 }} />
         </View>
       </View>
 
-      {/* 人物部分：整条色带，左右贴边 */}
+      {/* Character section: full-width color band */}
       <View style={styles.profileSection}>
         <View style={styles.profileRow}>
           <View style={styles.avatarWrapper}>
@@ -184,9 +184,9 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* 内容区域 */}
+      {/* Content area */}
       <View style={styles.content}>
-        {/* AI Companion 卡片 */}
+        {/* AI Companion card */}
         <TouchableOpacity
           style={[
             styles.companionCard,
@@ -196,7 +196,7 @@ export default function ProfileScreen() {
           ]}
           onPress={() => router.push("/profile/companion")}
         >
-          {/* 上半行：头像 + 文本，箭头跟名字同一行 */}
+          {/* Top row: avatar + text, arrow aligned with name */}
           <View style={styles.companionTopRow}>
             <View style={styles.companionAvatarWrapper}>
               <Image
@@ -234,7 +234,7 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* 下半行：标签，单独一整行 */}
+          {/* Bottom row: tags, full-width */}
           <View style={styles.tagRow}>
             {companionTags.map((t, i) => (
               <View key={i} style={styles.tag}>
@@ -244,7 +244,7 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* 设置列表 */}
+        {/* Settings list */}
         <View style={styles.menuSection}>
           {SETTINGS_ITEMS.map((item) => (
             <TouchableOpacity
@@ -266,7 +266,7 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* 退出 + 版本号 */}
+        {/* Logout + version */}
         <View style={styles.footer}>
           <TouchableOpacity
             onPress={async () => {
@@ -287,7 +287,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7E7D3", // 整页背景
+    backgroundColor: "#F7E7D3", // Page background
   },
   loadingContainer: {
     flex: 1,
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7E7D3",
   },
 
-  // 顶部标题栏：只放标题，背景用整页的颜色
+  // Top header: only title, background uses page color
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
@@ -328,19 +328,19 @@ const styles = StyleSheet.create({
     color: "#4A2C22",
   },
 
-  // 人物区域：整条色块，左右铺满 + 稍微更高
+  // Character area: full-width band, slightly taller
   profileSection: {
     backgroundColor: "#EBCDA3",
     paddingHorizontal: 24,
     paddingTop: 22,
-    paddingBottom: 26, // ⭐ 拉高一点
+    paddingBottom: 26, // Make it a bit taller
   },
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   avatarWrapper: {
-    width: 88,              // ⭐ 头像更大
+    width: 88,              // Larger avatar
     height: 88,
     borderRadius: 44,
     borderWidth: 3,
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   usernameText: {
-    fontSize: 26,          // ⭐ 字稍微大一点
+    fontSize: 26,          // Slightly larger text
     fontWeight: "700",
     color: "#4A2C22",
   },
@@ -374,13 +374,13 @@ const styles = StyleSheet.create({
   },
   joinText: {
     marginTop: 6,
-    fontSize: 15,          // ⭐ 略大一点
+    fontSize: 15,          // Slightly larger text
     color: "#7E5F42",
   },
 
   content: {
     paddingHorizontal: 24,
-    paddingTop: 24,        // ⭐ 和人物区域拉开一点
+    paddingTop: 24,        // Add spacing from character area
   },
 
   companionCard: {
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
-  // 上半行：头像 + 文本
+  // Top row: avatar + text
   companionTopRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   companionNameRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // 左名字右箭头
+    justifyContent: "space-between", // Name left, arrow right
   },
   companionNameText: {
     fontSize: 20,
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     color: "#7E5F42",
   },
 
-  // 下半行：标签
+  // Bottom row: tags
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",

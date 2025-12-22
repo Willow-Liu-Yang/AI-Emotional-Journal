@@ -9,16 +9,16 @@ class AIReply(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # 关联的日记（1 对 1：每篇日记最多一条 AI 回复）
+    # Related journal entry (1:1; one reply per entry)
     entry_id = Column(
         Integer,
         ForeignKey("journal_entries.id"),
         nullable=False,
-        unique=True,   # 保证一篇日记只会有一条记录
+        unique=True,   # Ensure only one record per entry
         index=True,
     )
 
-    # 属于哪个用户（冗余一份，查询更方便）
+    # Which user it belongs to (duplicated for easier queries)
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
@@ -26,7 +26,7 @@ class AIReply(Base):
         index=True,
     )
 
-    # 哪个 AI 伴侣生成的
+    # Which AI companion generated it
     companion_id = Column(
         Integer,
         ForeignKey("ai_companions.id"),
@@ -34,24 +34,24 @@ class AIReply(Base):
         index=True,
     )
 
-    # 回复类型：现在统一 "empathetic_reply"，以后可以扩展别的类型
+    # Reply type: currently "empathetic_reply", extendable later
     reply_type = Column(
         String(50),
         nullable=False,
         server_default="empathetic_reply",
     )
 
-    # 实际回复内容
+    # Actual reply content
     content = Column(Text, nullable=False)
 
-    # 使用的模型名（方便以后调试 / 切换模型）
+    # Model name used (for debugging/switching later)
     model_name = Column(String(100), nullable=True)
 
-    # 创建时间
+    # Created time
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
-    # ------------ 关系 ------------
+    # ------------ Relationships ------------
     entry = relationship("JournalEntry", back_populates="ai_reply")
     user = relationship("User", back_populates="ai_replies")
     companion = relationship("AICompanion", back_populates="replies")

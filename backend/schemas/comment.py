@@ -3,12 +3,12 @@ from datetime import datetime
 from typing import Optional
 
 
-# 用户创建评论（输入）
+# Comment create input (from user)
 class CommentCreate(BaseModel):
     content: str
 
 
-# 评论输出（给前端）
+# Comment output (to frontend)
 class CommentOut(BaseModel):
     id: int
     entry_id: int

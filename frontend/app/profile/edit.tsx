@@ -103,7 +103,7 @@ export default function EditProfileScreen() {
       style={styles.page}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      {/* 顶部：和 Profile 一致的标题栏 */}
+      {/* Top: header consistent with Profile */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
           <TouchableOpacity
@@ -123,7 +123,7 @@ export default function EditProfileScreen() {
         </View>
       </View>
 
-      {/* 内容 */}
+      {/* Content */}
       <View style={styles.content}>
         <View style={styles.formCard}>
           <Text style={styles.label}>Nickname</Text>
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7E7D3",
   },
 
-  // 顶部标题栏
+  // Top header
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     color: "#4A2C22",
   },
 
-  // 内容区
+  // Content area
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
 
   saveBtn: {
     marginTop: 26,
-    backgroundColor: "#7CA073", // 和日记页 send 按钮同色
+    backgroundColor: "#7CA073", // Same as journal send button color
     paddingVertical: 14,
     borderRadius: 999,
     alignItems: "center",

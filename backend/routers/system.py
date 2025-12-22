@@ -16,10 +16,9 @@ router = APIRouter(prefix="", tags=["System"])
 @router.get("/health")
 def health_check():
     """
-    系统健康检查接口：
-    检查数据库、DeepSeek API 等状态
+    System health check endpoint:
+    Check database, DeepSeek API, etc.
     """
-
     # -------------------------------
     # Check Database
     # -------------------------------
@@ -41,7 +40,7 @@ def health_check():
             resp = requests.get("https://api.deepseek.com", timeout=3)
 
             if resp.status_code in (200, 404):
-                # 404 也代表服务可访问（因为根路径没有资源）
+                # 404 also indicates the service is reachable (root has no resource)
                 ai_status = "available"
             else:
                 ai_status = f"unreachable ({resp.status_code})"

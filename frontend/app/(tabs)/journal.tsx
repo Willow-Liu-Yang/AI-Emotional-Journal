@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { entriesApi } from "@/api/entries";
 
-// Emotion → Color 映射
+// Emotion -> color mapping
 const EMOTION_COLORS: Record<string, string> = {
   joy: "#F4D98E",
   calm: "#8CB89F",
@@ -25,7 +25,7 @@ const EMOTION_COLORS: Record<string, string> = {
   anger: "#C66C5E",
 };
 
-// 按月过滤 entries（用年+月）
+// Filter entries by month (year+month)
 function filterEntriesByMonth(allEntries: any[], monthStr: string) {
   if (!monthStr) return [];
   const [y, m] = monthStr.split("-");
@@ -45,29 +45,29 @@ export default function JournalListPage() {
   const [currentMonth, setCurrentMonth] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [showMonthSelector, setShowMonthSelector] = useState(false);
-  const [showHelp, setShowHelp] = useState(false); // 问号弹窗
+  const [showHelp, setShowHelp] = useState(false); // Help popup
 
-  // 🔁 每次页面获得焦点时刷新（包括第一次进入和从写日记返回）
+  // Refresh on focus (initial load and return from write)
   useFocusEffect(
     useCallback(() => {
       loadAllMonths();
     }, [])
   );
 
-  // 加载全部 entries → 提取月份 & 设置“默认当前月”的列表
+  // Load all entries -> extract months and set default current month list
   async function loadAllMonths() {
     setLoading(true);
     try {
-      const all = await entriesApi.getAll(); // 不加 date → 返回所有 entries
+      const all = await entriesApi.getAll(); // No date -> return all entries
 
       const months = extractMonths(all);
       setAllMonths(months);
 
       if (months.length > 0) {
-        const defaultMonth = months[0]; // 最近一个月
+        const defaultMonth = months[0]; // Most recent month
         setCurrentMonth(defaultMonth);
 
-        // 只保留这个月的 entries
+        // Keep only entries from this month
         const filtered = filterEntriesByMonth(all, defaultMonth);
         setEntries(filtered);
       } else {
@@ -81,7 +81,7 @@ export default function JournalListPage() {
     }
   }
 
-  // 用户在下拉里选择月份时：只刷新这个月
+  // When user picks a month: refresh only that month
   async function handleSelectMonth(m: string) {
     setShowMonthSelector(false);
     setCurrentMonth(m);
@@ -94,7 +94,7 @@ export default function JournalListPage() {
     }
   }
 
-  // 从所有日记中生成“有内容的月份”
+  // Generate months that have content
   function extractMonths(allEntries: any[]): string[] {
     const set = new Set<string>();
 
@@ -107,7 +107,7 @@ export default function JournalListPage() {
       set.add(m);
     });
 
-    // 按日期从新到旧排序
+    // Sort by date descending
     return Array.from(set).sort((a, b) => (a > b ? -1 : 1));
   }
 
@@ -127,7 +127,7 @@ export default function JournalListPage() {
       <View style={styles.headerWrap}>
         <Text style={styles.header}>Journal List</Text>
 
-        {/* 右上角头像（和首页一致） */}
+        {/* Top-right avatar (same as home) */}
         <TouchableOpacity onPress={() => router.push("/profile")}>
           <Image
             source={require("@/assets/images/profile/Profile.png")}
@@ -136,9 +136,9 @@ export default function JournalListPage() {
         </TouchableOpacity>
       </View>
 
-      {/* 时间胶囊卡片：左插画 + 文案 + 右上问号 */}
+      {/* Time capsule card: left illustration + text + top-right question */}
       <View style={styles.capsule}>
-        {/* 主内容：插画 + 文案 */}
+        {/* Main content: illustration + text */}
         <View style={styles.capsuleMainRow}>
           <Image
             source={require("@/assets/images/capsule/capsule_empty.png")}
@@ -153,7 +153,7 @@ export default function JournalListPage() {
           </View>
         </View>
 
-        {/* 右上角问号（悬在角上，不挡下面文字） */}
+        {/* Top-right question mark (floats, not covering text) */}
         <TouchableOpacity
           onPress={() => setShowHelp(true)}
           activeOpacity={0.8}
@@ -167,7 +167,7 @@ export default function JournalListPage() {
         </TouchableOpacity>
       </View>
 
-      {/* 月份选择 + 悬浮下拉 */}
+      {/* Month selector + floating dropdown */}
       <View style={styles.monthWrapper}>
         <TouchableOpacity
           onPress={() => setShowMonthSelector(!showMonthSelector)}
@@ -201,7 +201,7 @@ export default function JournalListPage() {
         ))}
       </ScrollView>
 
-      {/* 问号弹出的 pop-up：居中小卡片，左问号 + 右文字 */}
+      {/* Help popup: centered card with question icon + text */}
       {showHelp && (
         <TouchableOpacity
           activeOpacity={1}
@@ -227,9 +227,9 @@ export default function JournalListPage() {
   );
 }
 
-/** ---- Journal Card（日记卡片） ---- **/
+/** ---- Journal Card ---- **/
 function JournalCard({ entry }: any) {
-  const router = useRouter(); // ⭐ 在子组件里也用 useRouter
+  const router = useRouter(); // Use useRouter in child component too
 
   const dateObj = new Date(entry.created_at);
   const day = dateObj.getDate();
@@ -237,30 +237,30 @@ function JournalCard({ entry }: any) {
     .toLocaleDateString("en-US", { weekday: "short" })
     .toUpperCase();
 
-  // 把 emotion 统一转成小写再查颜色
+  // Normalize emotion to lowercase before color lookup
   const emotionKey = (entry.emotion || "").toLowerCase();
-  const emotionColor = EMOTION_COLORS[emotionKey] || "#D8CABC"; // 默认一个柔和米色
+  const emotionColor = EMOTION_COLORS[emotionKey] || "#D8CABC"; // Default soft beige
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => router.push(`/entries/${entry.id}`)}   // ⭐ 跳转详情页
+      onPress={() => router.push(`/entries/${entry.id}`)}   // Go to detail page
     >
-      {/* 日期块 */}
+      {/* Date block */}
       <View style={styles.dateBox}>
         <Text style={styles.day}>{day}</Text>
         <Text style={styles.week}>{weekday}</Text>
       </View>
 
-      {/* 中间那根小竖线（稍微靠左） */}
+      {/* Middle vertical line (slightly left) */}
       <View style={styles.cardDivider} />
 
-      {/* 摘要文字：最多 3 行，让 RN 自己尾部加 ... */}
+      {/* Summary text: max 3 lines, RN adds ellipsis */}
       <Text numberOfLines={3} ellipsizeMode="tail" style={styles.summary}>
         {entry.summary}
       </Text>
 
-      {/* 情绪小圆点 */}
+      {/* Emotion dot */}
       <View style={[styles.emotionDot, { backgroundColor: emotionColor }]} />
     </TouchableOpacity>
   );
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
 
-  /* 时间胶囊卡片 */
+  /* Time capsule card */
   capsule: {
     position: "relative",
     borderRadius: 22,

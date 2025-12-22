@@ -3,14 +3,14 @@ import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 /**
- * calendarData 结构：
+ * calendarData structure:
  *  - week:  [{ date, paw }]
  *  - month: [[paw, paw, ...], ...]
  *
- * paw 值: "none" | "light" | "dark"
+ * paw value: "none" | "light" | "dark"
  *
- * 本组件会优先使用图片 assets/insights/paw_*.png（none/light/dark），
- * 如果图片不存在则回退到 emoji 渲染。
+ * This component prefers assets/insights/paw_*.png (none/light/dark),
+ * and falls back to emoji when images are missing.
  */
 
 // try to require images (if present)

@@ -21,13 +21,13 @@ export function HomeCard({
       onPress={onPress}
       style={[styles.card, { backgroundColor: background }]}
     >
-      {/* Row：图标 + 标题 */}
+      {/* Row: icon + title */}
       <View style={styles.row}>
         <Image source={icon} style={styles.icon} />
         <Text style={styles.title}>{title}</Text>
       </View>
 
-      {/* Text 在下一行 */}
+      {/* Text on next line */}
       <Text style={styles.text}>{text}</Text>
     </TouchableOpacity>
   );
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
 
-  // 横向排列 icon + title
+  // Horizontal layout: icon + title
   row: {
     flexDirection: "row",
     alignItems: "center",

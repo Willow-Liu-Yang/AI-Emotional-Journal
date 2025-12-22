@@ -18,7 +18,7 @@ SECRET_KEY = os.getenv("SECRET_KEY") or "CHANGE_THIS_IN_PRODUCTION_TO_A_LONG_RAN
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-oauth2_scheme = HTTPBearer()   # 使用 Bearer token
+oauth2_scheme = HTTPBearer()   # Use Bearer token
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):

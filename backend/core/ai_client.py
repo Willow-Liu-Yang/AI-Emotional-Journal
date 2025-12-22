@@ -9,13 +9,11 @@ if not SILICONFLOW_API_KEY:
     raise RuntimeError("SILICONFLOW_API_KEY is missing in environment!")
 
 API_URL = "https://api.siliconflow.com/v1/chat/completions"
-MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"   # ← 新模型名
+MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"   # New model name
 
 
 def call_siliconflow(prompt: str) -> str:
-    """
-    通用 LLM 调用函数，统一使用 Qwen2.5-7B-Instruct。
-    """
+    """Generic LLM call helper, always using Qwen2.5-7B-Instruct."""
 
     headers = {
         "Authorization": f"Bearer {SILICONFLOW_API_KEY}",
@@ -28,7 +26,7 @@ def call_siliconflow(prompt: str) -> str:
             {"role": "system", "content": "You are a helpful AI assistant."},
             {"role": "user", "content": prompt},
         ],
-        # Qwen 最佳温度 0.6（风格柔和、稳定）
+        # Qwen best temperature: 0.6 (soft, stable style)
         "temperature": 0.6,
     }
 

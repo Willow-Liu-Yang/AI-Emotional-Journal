@@ -17,16 +17,14 @@ router = APIRouter(
 
 
 # ------------------------------------------------
-# 工具函数：生成摘要 summary（取前 200 字）
+# Helper: generate summary (first 200 chars)
 # ------------------------------------------------
 def generate_summary(content: str) -> str:
     return content[:200].strip()
 
 
 def _parse_date_ymd_to_utc_start(date_str: str) -> datetime:
-    """
-    解析 YYYY-MM-DD，返回 UTC 的当天起始时间（00:00:00Z）。
-    """
+    """Parse YYYY-MM-DD and return UTC start of that day (00:00:00Z)."""
     try:
         d = datetime.fromisoformat(date_str).date()
     except Exception:
@@ -35,9 +33,7 @@ def _parse_date_ymd_to_utc_start(date_str: str) -> datetime:
 
 
 def _parse_month_ym_to_utc_range(month_str: str) -> tuple[datetime, datetime]:
-    """
-    解析 YYYY-MM，返回该月的 [start, end)（UTC）。
-    """
+    """Parse YYYY-MM and return [start, end) for that month (UTC)."""
     try:
         year_str, month_str2 = month_str.split("-")
         year = int(year_str)
@@ -57,11 +53,11 @@ def _parse_month_ym_to_utc_range(month_str: str) -> tuple[datetime, datetime]:
 
 
 # ------------------------------------------------
-# POST /entries —— 创建日记
-# 规则：
-# - 无论 need_ai_reply 是否为 True，都要生成分析字段（emotion/theme 写入 DB）
-# - 只有 need_ai_reply=True 才会创建 AIReply
-# - created_at 由 DB server_default 统一写入（UTC + tz-aware）
+# POST /entries - create journal entry
+# Rules:
+# - Always generate analysis fields (emotion/theme saved to DB) regardless of need_ai_reply
+# - Only create AIReply when need_ai_reply=True
+# - created_at is set by DB server_default (UTC + tz-aware)
 # ------------------------------------------------
 @router.post("/", response_model=EntryOut)
 def create_entry(
@@ -84,10 +80,10 @@ def create_entry(
     )
 
     db.add(new_entry)
-    db.flush()  # 先拿到 new_entry.id（同一个 Session 内可被后续 service 查询到）
+    db.flush()  # Get new_entry.id first (same Session for later service queries)
 
     try:
-        # ✅ 不选 AI 回复也要做分析；选了则生成回复 + 分析
+        # Do analysis even without AI reply; if selected, generate reply + analysis
         if entry.need_ai_reply:
             generate_ai_reply_for_entry(
                 db=db,
@@ -103,7 +99,7 @@ def create_entry(
                 force_regenerate=False,
             )
 
-        # ✅ 统一在这里 commit：无论 service 内部是否 commit，这里再 commit 一次都安全
+        # Commit here regardless of service commit; safe to commit again
         db.commit()
 
     except Exception:
@@ -115,7 +111,7 @@ def create_entry(
 
 
 # ------------------------------------------------
-# GET /entries —— 获取日记列表（summary）
+# GET /entries - list journal entries (summary)
 # ------------------------------------------------
 @router.get("/", response_model=list[EntrySummary])
 def get_entries(
@@ -131,7 +127,7 @@ def get_entries(
     )
 
     # ----------------------------
-    # 按年月或日期筛选
+    # Filter by year/month or date
     # ----------------------------
     if date:
         if len(date) == 7:  # YYYY-MM
@@ -146,11 +142,11 @@ def get_entries(
         )
 
     # ----------------------------
-    # 时间区间筛选（UTC-aware，使用半开区间）
-    # 约定：
-    # - from_date: YYYY-MM-DD（包含当天）
-    # - to_date:   YYYY-MM-DD（包含当天）
-    # 即筛选 [from_date 00:00Z, to_date+1day 00:00Z)
+    # Time range filter (UTC-aware, half-open interval)
+    # Conventions:
+    # - from_date: YYYY-MM-DD (inclusive)
+    # - to_date:   YYYY-MM-DD (inclusive)
+    # Filter [from_date 00:00Z, to_date+1day 00:00Z)
     # ----------------------------
     if from_date or to_date:
         start = _parse_date_ymd_to_utc_start(from_date) if from_date else None
@@ -169,7 +165,7 @@ def get_entries(
 
 
 # ------------------------------------------------
-# GET /entries/{id} —— 获取详情（带 pleasure + ai_reply）
+# GET /entries/{id} - get detail (with pleasure + ai_reply)
 # ------------------------------------------------
 @router.get("/{entry_id}", response_model=EntryOut)
 def get_entry(
@@ -194,7 +190,7 @@ def get_entry(
 
 
 # ------------------------------------------------
-# POST /entries/{id}/ai_reply —— 生成 / 重新生成 AI 回复
+# POST /entries/{id}/ai_reply - generate/regenerate AI reply
 # ------------------------------------------------
 @router.post("/{entry_id}/ai_reply", response_model=AIReplyOut)
 def create_ai_reply_for_entry_endpoint(
@@ -210,7 +206,7 @@ def create_ai_reply_for_entry_endpoint(
         force_regenerate=force_regenerate,
     )
 
-    # 这里也统一 commit 一次，避免 service 是否 commit 的不确定性
+    # Commit here to avoid uncertainty about service commit
     db.commit()
     db.refresh(ai_reply)
 
@@ -218,7 +214,7 @@ def create_ai_reply_for_entry_endpoint(
 
 
 # ------------------------------------------------
-# DELETE /entries/{id} —— 软删除
+# DELETE /entries/{id} - soft delete
 # ------------------------------------------------
 @router.delete("/{entry_id}")
 def delete_entry(

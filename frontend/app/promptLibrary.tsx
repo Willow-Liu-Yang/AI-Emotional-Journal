@@ -1,4 +1,4 @@
-// app/promptLibrary.tsx  (或 app/promptLibrary/index.tsx)
+// app/promptLibrary.tsx (or app/promptLibrary/index.tsx)
 
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";

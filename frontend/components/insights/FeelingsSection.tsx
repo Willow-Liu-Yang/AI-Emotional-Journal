@@ -33,7 +33,7 @@ export default function FeelingsSection({ emotions }: Props) {
 
   // We'll iterate entries in a stable order: sort by count desc to make large arcs first (optional)
   const entries = Object.entries(emotions)
-  .filter(([_, count]) => count > 0) // 🟢 过滤掉 count 为 0 的情绪
+  .filter(([_, count]) => count > 0) // Filter out emotions with count 0
   .sort((a, b) => b[1] - a[1]);
 
   // cumulative fraction tracker

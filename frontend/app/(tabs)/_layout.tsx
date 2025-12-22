@@ -5,29 +5,29 @@ import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
-// 统一配置三个 Tab 对应的图标 & 文本
+// Unified config for three tabs (icons & labels)
 const TAB_CONFIG: Record<
   string,
   { label: string; icon: string }
 > = {
   today: {
     label: "Today",
-    icon: "sun.max", // 小太阳
+    icon: "sun.max", // Sun
   },
   journal: {
     label: "Journal",
-    icon: "book.closed", // 小本子
+    icon: "book.closed", // Notebook
   },
   insights: {
     label: "Insights",
-    icon: "waveform.path.ecg", // 心电/波形
+    icon: "waveform.path.ecg", // ECG waveform
   },
 };
 
 export default function TabLayout() {
   return (
     <Tabs
-      // ⭐ 用自定义底栏
+      // Use custom tab bar
       tabBar={(props) => <MyCustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
@@ -56,12 +56,12 @@ export default function TabLayout() {
 }
 
 /**
- * 自定义底部导航栏
- * 样式尽量贴你截图：白色背景 + 顶部细分割线 + 绿色选中态
+ * Custom bottom navigation bar
+ * Style close to the screenshot: white bg + thin top divider + green active state
  */
 function MyCustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
-  const activeColor = "#6FA77A"; // 绿色（Journal 那种）
-  const inactiveColor = "#B0AAA0"; // 灰棕色
+  const activeColor = "#6FA77A"; // Green (like Journal)
+  const inactiveColor = "#B0AAA0"; // Warm gray
   const backgroundColor = "#FFFFFF";
 
   return (
@@ -94,13 +94,13 @@ function MyCustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
           >
-            {/* 图标 */}
+            {/* Icon */}
             <IconSymbol
               name={config.icon as any}
               size={22}
               color={isFocused ? activeColor : inactiveColor}
             />
-            {/* 文本 */}
+            {/* Label */}
             <Text
               style={[
                 styles.label,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     height: 70,
     flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: "#E4DED5", // 很淡的分割线
+    borderTopColor: "#E4DED5", // Very light divider line
     justifyContent: "space-around",
     alignItems: "center",
   },

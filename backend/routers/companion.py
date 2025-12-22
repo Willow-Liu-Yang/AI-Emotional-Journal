@@ -15,7 +15,7 @@ router = APIRouter(
 
 
 # -----------------------
-# 1. 列出所有 AI 人设
+# 1. List all AI personas
 # -----------------------
 @router.get("/", response_model=list[AICompanionSummary])
 def list_companions(db: Session = Depends(get_db)):
@@ -24,7 +24,7 @@ def list_companions(db: Session = Depends(get_db)):
 
 
 # -----------------------
-# 2. 获取单个 AI 人设
+# 2. Get a single AI persona
 # -----------------------
 @router.get("/{companion_id}", response_model=AICompanionBase)
 def get_companion(companion_id: int, db: Session = Depends(get_db)):
@@ -35,7 +35,7 @@ def get_companion(companion_id: int, db: Session = Depends(get_db)):
 
 
 # -----------------------
-# 3. 用户选择 AI 人设
+# 3. User selects AI persona
 # -----------------------
 @router.post("/select", response_model=UserOut)
 def select_companion(
@@ -48,7 +48,7 @@ def select_companion(
     if not companion:
         raise HTTPException(status_code=404, detail="Companion not found")
 
-    # 更新用户绑定的人设
+    # Update the user-bound persona
     current_user.companion_id = data.companion_id
     db.commit()
     db.refresh(current_user)

@@ -10,21 +10,21 @@ export type Companion = {
 };
 
 export const companionsApi = {
-  /** 列出所有 AI 人设（选择页面用的） */
+  /** List all AI personas (for selection page) */
   async list(): Promise<Companion[]> {
     return apiRequest("/companions/", {
       method: "GET",
     });
   },
 
-  /** 获取单个 AI 人设 */
+  /** Get a single AI persona */
   async getOne(id: number): Promise<Companion> {
     return apiRequest(`/companions/${id}`, {
       method: "GET",
     });
   },
 
-  /** 选择 AI 人设 */
+  /** Select an AI persona */
   async select(companion_id: number) {
     return apiRequest("/companions/select", {
       method: "POST",
