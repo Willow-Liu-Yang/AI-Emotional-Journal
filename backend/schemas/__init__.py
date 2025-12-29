@@ -42,6 +42,13 @@ from .comment import (
 )
 
 # -------------------------------
+# Time capsule
+# -------------------------------
+from .time_capsule import (
+    TimeCapsuleOut,
+)
+
+# -------------------------------
 # Authentication (if auth.py exists)
 # -------------------------------
 try:

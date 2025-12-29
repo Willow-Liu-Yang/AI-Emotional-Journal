@@ -137,6 +137,20 @@ npm install
 npm run start
 ```
 
+## Seed Test Entries (optional)
+
+To quickly generate sample journal entries (including AI replies), run the seed script inside the backend container:
+
+```bash
+docker compose exec backend python scripts/seed_entries.py
+```
+
+Notes:
+
+- The script targets `test@example.com` by default; register/login once with that email first.
+- To change the target user, edit `TARGET_EMAIL` in `backend/scripts/seed_entries.py`.
+- It inserts about 6 entries (today, last week, last month, last year + a few random recent days).
+
 ## Troubleshooting
 
 ### Backend works in browser, but phone cannot log in or load data

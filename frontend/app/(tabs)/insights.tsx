@@ -33,7 +33,7 @@ export default function InsightsPage() {
       setLoading(true);
       setError(null);
 
-      const res = await insightsApi.getInsights(range);
+      const res = await insightsApi.getInsightsCached(range);
       setData(res);
     } catch (err: any) {
       console.log("Insights error:", err?.message);

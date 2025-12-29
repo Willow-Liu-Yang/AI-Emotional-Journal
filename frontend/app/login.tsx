@@ -16,6 +16,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { authApi } from "../api/auth";
+import { insightsApi } from "../api/insights";
+import { timeCapsuleApi } from "../api/timeCapsule";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -38,6 +40,9 @@ export default function LoginScreen() {
       setLoading(true);
       setError(null);
       await authApi.login(email.trim(), password);
+      void insightsApi.preloadToday("week");
+      void insightsApi.preloadToday("month");
+      void timeCapsuleApi.preloadToday();
       router.replace("/(tabs)");
     } catch (err: any) {
       console.error("Login error:", err);

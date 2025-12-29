@@ -3,6 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import { authApi } from "../api/auth";
+import { insightsApi } from "../api/insights";
+import { timeCapsuleApi } from "../api/timeCapsule";
 
 import {
   ActivityIndicator,
@@ -63,6 +65,9 @@ export default function Signup() {
 
       if (data?.access_token) {
         await AsyncStorage.setItem("token", data.access_token);
+        void insightsApi.preloadToday("week");
+        void insightsApi.preloadToday("month");
+        void timeCapsuleApi.preloadToday();
       } else {
         console.warn("Register response missing access_token:", data);
       }

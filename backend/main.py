@@ -7,7 +7,7 @@ from fastapi.openapi.utils import get_openapi
 from database import Base, engine
 import pkgutil
 import startup
-from routers import user, system, entries, companion, comments, stats, insights, calendar
+from routers import user, system, entries, companion, comments, stats, insights, calendar, time_capsule
 
 # ---------------------------------------
 # Create app (must be first)
@@ -28,6 +28,7 @@ app.include_router(comments.router)
 app.include_router(stats.router)
 app.include_router(insights.router)
 app.include_router(calendar.router)
+app.include_router(time_capsule.router)
 
 # ---------------------------------------
 # Startup event scan

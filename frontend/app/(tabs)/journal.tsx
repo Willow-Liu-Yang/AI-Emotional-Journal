@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { entriesApi } from "@/api/entries";
+import { timeCapsuleApi, TimeCapsule } from "@/api/timeCapsule";
 
 // Emotion -> color mapping
 const EMOTION_COLORS: Record<string, string> = {
@@ -46,11 +47,14 @@ export default function JournalListPage() {
   const [loading, setLoading] = useState(true);
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showHelp, setShowHelp] = useState(false); // Help popup
+  const [capsule, setCapsule] = useState<TimeCapsule | null>(null);
+  const [capsuleLoading, setCapsuleLoading] = useState(false);
 
   // Refresh on focus (initial load and return from write)
   useFocusEffect(
     useCallback(() => {
       loadAllMonths();
+      loadTimeCapsule();
     }, [])
   );
 
@@ -94,6 +98,18 @@ export default function JournalListPage() {
     }
   }
 
+  async function loadTimeCapsule() {
+    setCapsuleLoading(true);
+    try {
+      const res = await timeCapsuleApi.getTodayCached();
+      setCapsule(res);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setCapsuleLoading(false);
+    }
+  }
+
   // Generate months that have content
   function extractMonths(allEntries: any[]): string[] {
     const set = new Set<string>();
@@ -121,6 +137,13 @@ export default function JournalListPage() {
     );
   }
 
+  const canOpenCapsule = Boolean(capsule?.found && capsule?.entry_id);
+
+  function handleOpenCapsule() {
+    if (!canOpenCapsule || !capsule?.entry_id) return;
+    router.push(`/entries/${capsule.entry_id}`);
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -139,19 +162,39 @@ export default function JournalListPage() {
       {/* Time capsule card: left illustration + text + top-right question */}
       <View style={styles.capsule}>
         {/* Main content: illustration + text */}
-        <View style={styles.capsuleMainRow}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleOpenCapsule}
+          disabled={!canOpenCapsule}
+          style={styles.capsuleMainRow}
+        >
           <Image
-            source={require("@/assets/images/capsule/capsule_empty.png")}
+            source={
+              capsule?.found
+                ? require("@/assets/images/capsule/capsule_filled.png")
+                : require("@/assets/images/capsule/capsule_empty.png")
+            }
             style={styles.capsuleImage}
             resizeMode="contain"
           />
           <View style={styles.capsuleTextWrap}>
-            <Text style={styles.capsuleTitle}>Empty Capsule</Text>
+            <Text style={styles.capsuleTitle}>
+              {capsule?.found ? "Time Capsule" : "Empty Capsule"}
+            </Text>
+            {capsule?.found && capsule?.source_date && (
+              <Text style={styles.capsuleDate}>
+                From {formatCapsuleDate(capsule.source_date)}
+              </Text>
+            )}
             <Text style={styles.capsuleBody}>
-              Your time capsule is waiting to be filled.
+              {capsuleLoading
+                ? "Loading your time capsule..."
+                : capsule?.found
+                  ? capsule?.quote || "A special moment from your past."
+                  : "Your time capsule is waiting to be filled."}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Top-right question mark (floats, not covering text) */}
         <TouchableOpacity
@@ -275,6 +318,16 @@ function toLongMonth(str: string) {
     .toUpperCase();
 }
 
+function formatCapsuleDate(isoDate: string) {
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
 /** ---- Styles ---- **/
 const styles = StyleSheet.create({
   container: {
@@ -327,6 +380,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#6A4B3C",
     marginBottom: 4,
+  },
+  capsuleDate: {
+    fontSize: 12,
+    color: "#8A6B5B",
+    marginBottom: 6,
   },
   capsuleBody: {
     fontSize: 14,
