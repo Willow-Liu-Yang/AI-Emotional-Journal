@@ -14,10 +14,12 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import JournalEntry, User
+from routers.user import hash_password
 from services.ai_reply_service import generate_ai_reply_for_entry
 
 # Set the target user's email (User.email)
 TARGET_EMAIL = "test@example.com"
+TARGET_PASSWORD = "test1234"
 
 # Emotion pool (only used to pick text; emotion/intensity are written by AI service)
 EMOTIONS = ["joy", "calm", "tired", "anxiety", "sadness", "anger"]
@@ -137,19 +139,27 @@ def seed_entries_for_user(total_entries: int = 6) -> None:
 
     db: Session = SessionLocal()
 
-    # Find target user
+    # Find or create target user
     user_query = db.query(User)
     if TARGET_EMAIL:
         user_query = user_query.filter(User.email == TARGET_EMAIL)
 
     user = user_query.order_by(User.id.asc()).first()
     if not user:
-        if TARGET_EMAIL:
-            print(f"User not found for email={TARGET_EMAIL!r}. Please register/login once, then retry.")
-        else:
+        if not TARGET_EMAIL:
             print("No users found. Please register a user first, then retry.")
-        db.close()
-        return
+            db.close()
+            return
+
+        user = User(
+            email=TARGET_EMAIL,
+            password=hash_password(TARGET_PASSWORD),
+            companion_id=1,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        print(f"Created user id={user.id}, email={user.email}")
 
     now = datetime.utcnow()
 

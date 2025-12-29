@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import hashlib
+import json
 from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
-from models import JournalEntry, AICompanion, User
+from models import JournalEntry, AICompanion, User, InsightsNoteCache
 from .ai_summary_service import generate_summary_message
 
 # Import calendar generation logic
@@ -21,6 +23,12 @@ VALENCE = {
     "anxiety": -1,
     "sadness": -2,
     "anger": -2,
+}
+
+INTENSITY_WEIGHT = {
+    1: 0.7,
+    2: 1.0,
+    3: 1.3,
 }
 
 # Use unified theme keys: work/hobbies/social/other (no more job)
@@ -136,6 +144,25 @@ def _normalize_theme_scores(scores_dict: Any) -> Optional[Dict[str, float]]:
     return cleaned
 
 
+def _build_note_signature(
+    range_type: str,
+    stats: Dict[str, Any],
+    emotion_counts: Dict[str, int],
+    emotion_trend: list[Dict[str, Any]],
+    companion_id: Optional[int],
+) -> str:
+    payload = {
+        "range_type": range_type,
+        "entries": stats.get("entries", 0),
+        "active_days": stats.get("active_days", 0),
+        "emotion_counts": emotion_counts,
+        "emotion_trend": emotion_trend,
+        "companion_id": companion_id,
+    }
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
 # -----------------------------
 # Main aggregation
 # -----------------------------
@@ -170,13 +197,29 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
     # ------------------------------
     # C. Emotion valence trend (daily)
     # ------------------------------
-    trend: Dict[str, int] = {}
-    for e in entries:
-        d = e.created_at.date().isoformat()
-        v = VALENCE.get(e.emotion, 0)
-        trend[d] = trend.get(d, 0) + v
+    daily_sum: Dict[str, float] = {}
+    daily_count: Dict[str, int] = {}
+    today = datetime.now(timezone.utc).date()
 
-    emotion_trend = [{"date": d, "valence": v} for d, v in sorted(trend.items())]
+    for e in entries:
+        if not e.created_at:
+            continue
+        d = e.created_at.date()
+        if d > today:
+            continue
+        key = d.isoformat()
+        base = VALENCE.get(e.emotion, 0)
+        weight = INTENSITY_WEIGHT.get(e.emotion_intensity, 1.0)
+        score = float(base) * float(weight)
+
+        daily_sum[key] = daily_sum.get(key, 0.0) + score
+        daily_count[key] = daily_count.get(key, 0) + 1
+
+    emotion_trend = []
+    for d in sorted(daily_sum.keys()):
+        count = daily_count.get(d, 0) or 1
+        avg = daily_sum[d] / count
+        emotion_trend.append({"date": d, "valence": round(avg, 3)})
 
     # ------------------------------
     # D. Theme aggregation (Inner Landscape)
@@ -240,15 +283,65 @@ def aggregate_insights(db: Session, current_user: User, range_type: str):
                 "persona_prompt": getattr(default_c, "persona_prompt", None),
             }
 
-    if not entries:
-        note = ""
-    else:
-        note = generate_summary_message(companion_obj, emotion_trend, emotion_counts)
     note_author = (
         companion_obj.get("name")
         if isinstance(companion_obj, dict) and companion_obj.get("name")
         else "Companion"
     )
+
+    companion_id = companion_obj.get("id") if isinstance(companion_obj, dict) else None
+    signature = _build_note_signature(
+        range_type=range_type,
+        stats=stats,
+        emotion_counts=emotion_counts,
+        emotion_trend=emotion_trend,
+        companion_id=companion_id,
+    )
+
+    cache = (
+        db.query(InsightsNoteCache)
+        .filter(
+            InsightsNoteCache.user_id == user_id,
+            InsightsNoteCache.range_type == range_type,
+            InsightsNoteCache.start_date == start.date(),
+            InsightsNoteCache.end_date == end.date(),
+        )
+        .first()
+    )
+
+    if cache and cache.data_signature == signature and cache.note is not None:
+        note = cache.note
+        if cache.note_author:
+            note_author = cache.note_author
+    else:
+        if not entries:
+            note = ""
+        else:
+            note = generate_summary_message(
+                companion_obj,
+                range_type,
+                stats,
+                emotion_trend,
+                emotion_counts,
+            )
+
+        if cache:
+            cache.data_signature = signature
+            cache.note = note
+            cache.note_author = note_author
+        else:
+            cache = InsightsNoteCache(
+                user_id=user_id,
+                range_type=range_type,
+                start_date=start.date(),
+                end_date=end.date(),
+                data_signature=signature,
+                note=note,
+                note_author=note_author,
+            )
+            db.add(cache)
+
+        db.commit()
 
     # ------------------------------
     # H. Return

@@ -18,7 +18,7 @@ export default function ValenceSection({ range, trend }: Props) {
   if (!trend || trend.length === 0) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Emotional Valence Trend</Text>
+        <Text style={styles.title}>Emotion Trend</Text>
         <View style={styles.emptyRow}>
           <Image
             source={require("../../assets/images/insights/trend_empty.png")}
@@ -56,6 +56,8 @@ export default function ValenceSection({ range, trend }: Props) {
   while (points.length < labels.length) {
     points.push({ x: points.length, y: 0 });
   }
+
+  const realCount = trend.length;
 
   // canvas size
   const width = 300;
@@ -102,9 +104,35 @@ export default function ValenceSection({ range, trend }: Props) {
 
   const pathD = buildPath();
 
+  const buildDashedPath = () => {
+    if (realCount < 1 || realCount >= points.length) return "";
+
+    const start = points[realCount - 1];
+    const cmds: string[] = [];
+    cmds.push(`M ${padding + start.x * stepX},${toSvgY(start.y)}`);
+
+    for (let i = realCount; i < points.length; i++) {
+      const curr = points[i];
+      const prev = points[i - 1];
+
+      const x1 = padding + prev.x * stepX;
+      const x2 = padding + curr.x * stepX;
+
+      const y1 = toSvgY(prev.y);
+      const y2 = toSvgY(curr.y);
+
+      const cx = (x1 + x2) / 2;
+      cmds.push(`C ${cx},${y1} ${cx},${y2} ${x2},${y2}`);
+    }
+
+    return cmds.join(" ");
+  };
+
+  const dashedPathD = buildDashedPath();
+
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Emotional Valence Trend</Text>
+      <Text style={styles.title}>Emotion Trend</Text>
 
       {/* Positive / Negative labels */}
       <View style={styles.legendRow}>
@@ -130,26 +158,34 @@ export default function ValenceSection({ range, trend }: Props) {
         />
 
         {/* Curve line */}
-        <Path
-          d={pathD}
-          stroke="#6B4F3A"
-          strokeWidth={3}
-          fill="none"
-        />
+        <Path d={pathD} stroke="#6B4F3A" strokeWidth={3} fill="none" />
+
+        {dashedPathD ? (
+          <Path
+            d={dashedPathD}
+            stroke="#6B4F3A"
+            strokeWidth={2}
+            strokeDasharray="6 6"
+            opacity={0.35}
+            fill="none"
+          />
+        ) : null}
 
         {/* Points */}
         {points.map((p, idx) => {
           const cx = padding + p.x * stepX;
           const cy = toSvgY(p.y);
+          const isPlaceholder = idx >= realCount;
           return (
             <Circle
               key={idx}
               cx={cx}
               cy={cy}
-              r={5}
+              r={isPlaceholder ? 4 : 5}
               fill="#F7D678"
               stroke="#6B4F3A"
               strokeWidth={1.5}
+              opacity={isPlaceholder ? 0.35 : 1}
             />
           );
         })}
@@ -166,6 +202,7 @@ export default function ValenceSection({ range, trend }: Props) {
     </View>
   );
 }
+
 
 /* ---------------------------------------------------
  * Styles

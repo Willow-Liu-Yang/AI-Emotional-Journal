@@ -147,8 +147,9 @@ docker compose exec backend python scripts/seed_entries.py
 
 Notes:
 
-- The script targets `test@example.com` by default; register/login once with that email first.
-- To change the target user, edit `TARGET_EMAIL` in `backend/scripts/seed_entries.py`.
+- The script targets `test@example.com` by default and will auto-register if the user does not exist.
+- To change the target user, edit `TARGET_EMAIL` and `TARGET_PASSWORD` in `backend/scripts/seed_entries.py`.
+- Default seeded password is `test1234` (from `TARGET_PASSWORD`).
 - It inserts about 6 entries (today, last week, last month, last year + a few random recent days).
 
 ## Troubleshooting
