@@ -20,6 +20,7 @@ import {
 
 import { entriesApi } from "@/api/entries";
 import type { Entry, EntryComment } from "@/api/entries";
+import { useI18n } from "@/i18n";
 
 // Map avatar + name + subtitle by companion_id
 const COMPANION_UI: Record<number, { name: string; subtitle: string; avatar: any }> =
@@ -43,6 +44,7 @@ const COMPANION_UI: Record<number, { name: string; subtitle: string; avatar: any
 
 export default function EntryDetailScreen() {
   const router = useRouter();
+  const { language, t } = useI18n();
   const { entryId } = useLocalSearchParams<{ entryId?: string }>();
 
   const [entry, setEntry] = useState<Entry | null>(null);
@@ -90,7 +92,7 @@ export default function EntryDetailScreen() {
         const data = await entriesApi.getOne(Number(entryId));
         if (active) setEntry(data);
       } catch (e: any) {
-        if (active) setError(e?.message || "Failed to load entry.");
+        if (active) setError(e?.message || t("entry.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -134,7 +136,7 @@ export default function EntryDetailScreen() {
       setComments((prev) => [...prev, newComment]);
       setReflection("");
     } catch (e: any) {
-      Alert.alert("Error", e?.message || "Failed to add your note.");
+      Alert.alert(t("common.errorTitle"), e?.message || t("entry.comment.addError"));
     } finally {
       setSending(false);
     }
@@ -144,17 +146,20 @@ export default function EntryDetailScreen() {
   function handleDeleteComment(commentId: number) {
     if (!entryId) return;
 
-    Alert.alert("Delete note", "Are you sure you want to delete this note?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("entry.comment.deleteTitle"), t("entry.comment.deleteBody"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           try {
             await entriesApi.deleteComment(Number(entryId), commentId);
             setComments((prev) => prev.filter((c) => c.id !== commentId));
           } catch (e: any) {
-            Alert.alert("Error", e?.message || "Failed to delete note.");
+            Alert.alert(
+              t("common.errorTitle"),
+              e?.message || t("entry.comment.deleteError")
+            );
           }
         },
       },
@@ -166,7 +171,7 @@ export default function EntryDetailScreen() {
   const dateLabel =
     createdAt &&
     createdAt
-      .toLocaleDateString("en-US", {
+      .toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
         weekday: "long",
         month: "short",
         day: "numeric",
@@ -175,7 +180,7 @@ export default function EntryDetailScreen() {
 
   const timeLabel =
     createdAt &&
-    createdAt.toLocaleTimeString("en-US", {
+    createdAt.toLocaleTimeString(language === "zh" ? "zh-CN" : "en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -183,22 +188,25 @@ export default function EntryDetailScreen() {
 
   // Top-right menu: share + delete entry
   const handleShare = () => {
-    Alert.alert("Share", "Sharing will be available in a later version.");
+    Alert.alert(t("entry.entry.shareTitle"), t("entry.entry.shareBody"));
   };
 
   const handleDeletePress = () => {
     if (!entry) return;
-    Alert.alert("Delete entry", "Are you sure you want to delete this entry?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("entry.entry.deleteTitle"), t("entry.entry.deleteBody"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           try {
             await entriesApi.remove(entry.id); // Soft delete
             router.back();
           } catch (e: any) {
-            Alert.alert("Error", e?.message || "Failed to delete entry.");
+            Alert.alert(
+              t("common.errorTitle"),
+              e?.message || t("entry.entry.deleteError")
+            );
           }
         },
       },
@@ -207,10 +215,14 @@ export default function EntryDetailScreen() {
 
   const handleMenuPress = () => {
     if (!entry) return;
-    Alert.alert("Entry options", "", [
-      { text: "Share", onPress: handleShare },
-      { text: "Delete", style: "destructive", onPress: handleDeletePress },
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("entry.entry.optionsTitle"), "", [
+      { text: t("entry.entry.optionsShare"), onPress: handleShare },
+      {
+        text: t("entry.entry.optionsDelete"),
+        style: "destructive",
+        onPress: handleDeletePress,
+      },
+      { text: t("entry.entry.optionsCancel"), style: "cancel" },
     ]);
   };
 
@@ -298,7 +310,9 @@ export default function EntryDetailScreen() {
                   size={18}
                   color="#6A4A2A"
                 />
-                <Text style={styles.moodToggleText}>Mood Summary</Text>
+                <Text style={styles.moodToggleText}>
+                  {t("entry.moodSummary")}
+                </Text>
               </TouchableOpacity>
 
               {showMoodSummary && (
@@ -312,7 +326,8 @@ export default function EntryDetailScreen() {
                   <Text style={styles.moodLine}>
                     {formatEmotionWithIntensity(
                       entry.emotion ?? null,
-                      entry.emotion_intensity ?? null
+                      entry.emotion_intensity ?? null,
+                      t
                     )}
                   </Text>
                 </View>
@@ -323,7 +338,7 @@ export default function EntryDetailScreen() {
             <View style={styles.reflectionBar}>
               <TextInput
                 style={styles.reflectionInput}
-                placeholder="Leave a note to yourself..."
+                placeholder={t("entry.comment.placeholder")}
                 placeholderTextColor="#B08663"
                 value={reflection}
                 onChangeText={setReflection}
@@ -364,6 +379,8 @@ export default function EntryDetailScreen() {
                 key={c.id}
                 comment={c}
                 onDelete={() => handleDeleteComment(c.id)}
+                t={t}
+                language={language}
               />
             ))}
           </>
@@ -377,39 +394,57 @@ export default function EntryDetailScreen() {
 // Convert emotion + intensity to human-readable
 function formatEmotionWithIntensity(
   emotion: string | null,
-  intensity: number | null
+  intensity: number | null,
+  t: (key: any, vars?: Record<string, string>) => string
 ): string {
-  if (!emotion) return "No emotion detected yet";
+  if (!emotion) return t("entry.noEmotion");
 
-  const base = emotion.charAt(0).toUpperCase() + emotion.slice(1).toLowerCase();
+  const emotionKey = emotion.toLowerCase();
+  const localized =
+    ["joy", "calm", "anxiety", "sadness", "anger", "tired"].includes(emotionKey)
+      ? t(`emotion.${emotionKey}` as any)
+      : null;
+  const base =
+    localized ||
+    emotion.charAt(0).toUpperCase() + emotion.slice(1).toLowerCase();
 
   if (!intensity) return base;
 
   let label = "";
-  if (intensity === 1) label = "low";
-  else if (intensity === 2) label = "medium";
-  else if (intensity === 3) label = "high";
+  if (intensity === 1) label = t("entry.intensity.low");
+  else if (intensity === 2) label = t("entry.intensity.medium");
+  else if (intensity === 3) label = t("entry.intensity.high");
 
-  return label ? `${base} · ${label} intensity` : base;
+  return label ? `${base} · ${label}` : base;
 }
 
 // Single note card
 function CommentCard({
   comment,
   onDelete,
+  t,
+  language,
 }: {
   comment: EntryComment;
   onDelete: () => void;
+  t: (key: any, vars?: Record<string, string>) => string;
+  language: "en" | "zh";
 }) {
   const created = new Date(comment.created_at);
   const dateLabel = created
-    .toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    .toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
+      month: "short",
+      day: "numeric",
+    })
     .toUpperCase();
-  const timeLabel = created.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const timeLabel = created.toLocaleTimeString(
+    language === "zh" ? "zh-CN" : "en-US",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }
+  );
 
   return (
     <View style={styles.commentCard}>
@@ -418,7 +453,7 @@ function CommentCard({
           source={require("@/assets/images/profile/Profile.png")}
           style={styles.commentAvatar}
         />
-        <Text style={styles.commentName}>You</Text>
+        <Text style={styles.commentName}>{t("entry.comment.you")}</Text>
 
         <View style={styles.commentMetaRow}>
           <Text style={styles.commentTime}>

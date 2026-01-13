@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { insightsApi } from "../../api/insights";
+import { useI18n } from "@/i18n";
 
 import CalendarSection from "../../components/insights/CalendarSection";
 import FeelingsSection from "../../components/insights/FeelingsSection";
@@ -23,6 +24,7 @@ import ValenceSection from "../../components/insights/ValenceSection";
 
 export default function InsightsPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [range, setRange] = useState<"week" | "month">("week");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
@@ -37,7 +39,7 @@ export default function InsightsPage() {
       setData(res);
     } catch (err: any) {
       console.log("Insights error:", err?.message);
-      setError(err?.message || "Failed to load insights");
+      setError(err?.message || t("insights.error"));
     } finally {
       setLoading(false);
     }
@@ -58,24 +60,24 @@ export default function InsightsPage() {
   const safeNoteAuthor =
     typeof safe.note_author === "string" && safe.note_author.trim().length > 0
       ? safe.note_author
-      : "Companion";
+      : t("insights.noteAuthorFallback");
   const safeNote =
     typeof safe.note === "string" && safe.note.trim().length > 0
       ? safe.note
-      : `Hi, I'm ${safeNoteAuthor}. I'm here and ready to listen whenever you write your first entry.`;
+      : t("insights.noteFallback", { name: safeNoteAuthor });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#A67C52" />
-          <Text style={styles.loadingText}>Loading insights...</Text>
+          <Text style={styles.loadingText}>{t("insights.loading")}</Text>
         </View>
       ) : error ? (
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>⚠️ {error}</Text>
           <TouchableOpacity onPress={loadData} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
+            <Text style={styles.retryText}>{t("insights.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -86,7 +88,7 @@ export default function InsightsPage() {
         >
           {/* ===== Header ===== */}
           <View style={styles.headerWrap}>
-            <Text style={styles.title}>Insights</Text>
+            <Text style={styles.title}>{t("insights.title")}</Text>
             <TouchableOpacity
               onPress={() => router.push("/profile")}
               style={styles.avatarButton}
@@ -113,7 +115,7 @@ export default function InsightsPage() {
                   range === "week" && styles.toggleTextActive,
                 ]}
               >
-                This Week
+                {t("insights.week")}
               </Text>
             </TouchableOpacity>
 
@@ -130,7 +132,7 @@ export default function InsightsPage() {
                   range === "month" && styles.toggleTextActive,
                 ]}
               >
-                This Month
+                {t("insights.month")}
               </Text>
             </TouchableOpacity>
           </View>

@@ -2,12 +2,14 @@
 
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useI18n } from "@/i18n";
 
 export default function StatsSection({ stats }: { stats: any }) {
+  const { t } = useI18n();
   const items = [
-    { value: stats?.entries ?? 0, label: "Journal entries" },
-    { value: stats?.words ?? 0, label: "Words written" },
-    { value: stats?.active_days ?? 0, label: "Days active" },
+    { value: stats?.entries ?? 0, label: t("stats.journalEntries") },
+    { value: stats?.words ?? 0, label: t("stats.wordsWritten") },
+    { value: stats?.active_days ?? 0, label: t("stats.daysActive") },
   ];
 
   return (

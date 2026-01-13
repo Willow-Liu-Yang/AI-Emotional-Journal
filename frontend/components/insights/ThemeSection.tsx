@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
+import { useI18n } from "@/i18n";
 
 type ThemeKey = "work" | "hobbies" | "social" | "other";
 type ThemesInput = Partial<Record<ThemeKey, number>>;
@@ -39,11 +40,11 @@ const LANDSCAPE_IMAGES: Record<LandscapeVariant, any> = {
 
 const EMPTY_STATE_IMAGE = require("../../assets/images/insights/landscape/landscape_empty_state.png");
 
-const THEME_META: Record<ThemeKey, { label: string; emoji: string }> = {
-  work: { label: "Work", emoji: "⛰️" },     // Mountain
-  hobbies: { label: "Hobbies", emoji: "🏡" }, // House
-  social: { label: "Social", emoji: "🌸" },  // Flower
-  other: { label: "Other", emoji: "☁️" },    // Cloud
+const THEME_EMOJI: Record<ThemeKey, string> = {
+  work: "⛰️", // Mountain
+  hobbies: "🏡", // House
+  social: "🌸", // Flower
+  other: "☁️", // Cloud
 };
 
 
@@ -128,15 +129,16 @@ function pickTopKey(t: { work: number; hobbies: number; social: number; other: n
 }
 
 export default function ThemeSection({ themes }: { themes: ThemesInput }) {
+  const { t } = useI18n();
   const empty = useMemo(() => isEmptyThemes(themes), [themes]);
 
   if (empty) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Your Inner Landscape</Text>
+        <Text style={styles.title}>{t("theme.title")}</Text>
         <Image source={EMPTY_STATE_IMAGE} style={styles.emptyImage} resizeMode="contain" />
         <Text style={styles.emptyHint} numberOfLines={1}>
-          Write an entry to see your themes.
+          {t("theme.empty")}
         </Text>
       </View>
     );
@@ -155,7 +157,7 @@ export default function ThemeSection({ themes }: { themes: ThemesInput }) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Your Inner Landscape</Text>
+      <Text style={styles.title}>{t("theme.title")}</Text>
 
       <Image source={LANDSCAPE_IMAGES[variant]} style={styles.image} resizeMode="contain" />
 
@@ -170,18 +172,22 @@ export default function ThemeSection({ themes }: { themes: ThemesInput }) {
 }
 
 function SoftTile({ theme, pct, active }: { theme: ThemeKey; pct: number; active: boolean }) {
-  const meta = THEME_META[theme];
+  const { t } = useI18n();
+  const label = t(`theme.${theme}` as any);
+  const emoji = THEME_EMOJI[theme];
 
   return (
     <View style={[styles.tile, active && styles.tileActive]}>
       {active && <View pointerEvents="none" style={styles.bottomShadowBand} />}
 
       <View style={styles.tileRow}>
-        <Text style={styles.emoji}>{meta.emoji}</Text>
+        <Text style={styles.emoji}>{emoji}</Text>
 
         <View style={styles.textCol}>
           <Text style={[styles.pctText, active && styles.pctTextActive]}>{pct}%</Text>
-          <Text style={[styles.labelText, active && styles.labelTextActive]}>{meta.label}</Text>
+          <Text style={[styles.labelText, active && styles.labelTextActive]}>
+            {label}
+          </Text>
         </View>
       </View>
     </View>

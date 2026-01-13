@@ -1,6 +1,7 @@
 // components/insights/CalendarSection.tsx
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
+import { useI18n } from "@/i18n";
 
 /**
  * calendarData structure:
@@ -48,10 +49,11 @@ export default function CalendarSection({
   calendarData: any;
 }) {
   if (!calendarData) return null;
+  const { t } = useI18n();
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Paw Calendar</Text>
+      <Text style={styles.title}>{t("calendar.title")}</Text>
 
       {range === "week" ? (
         <WeekCalendar week={calendarData.week ?? []} />
@@ -66,7 +68,16 @@ export default function CalendarSection({
  * WEEK VIEW (Mon – Sun)
  * ---------------------------------------------------- */
 function WeekCalendar({ week }: { week: Array<any> }) {
-  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const { t } = useI18n();
+  const labels = [
+    t("day.mon"),
+    t("day.tue"),
+    t("day.wed"),
+    t("day.thu"),
+    t("day.fri"),
+    t("day.sat"),
+    t("day.sun"),
+  ];
   const todayIso = new Date().toISOString().slice(0, 10);
 
   return (
@@ -96,7 +107,16 @@ function WeekCalendar({ week }: { week: Array<any> }) {
  * MONTH VIEW (6 x 7 grid)
  * ---------------------------------------------------- */
 function MonthCalendar({ month }: { month: string[][] }) {
-  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const { t } = useI18n();
+  const labels = [
+    t("day.mon"),
+    t("day.tue"),
+    t("day.wed"),
+    t("day.thu"),
+    t("day.fri"),
+    t("day.sat"),
+    t("day.sun"),
+  ];
   // month is array of 6 rows, each row is 7 strings: "none"/"light"/"dark"
   // Build a local calendar grid for the current month so we can show date numbers.
   const today = new Date();

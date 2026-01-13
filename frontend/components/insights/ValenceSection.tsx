@@ -3,6 +3,7 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
+import { useI18n } from "@/i18n";
 
 interface TrendItem {
   date: string;
@@ -15,19 +16,18 @@ interface Props {
 }
 
 export default function ValenceSection({ range, trend }: Props) {
+  const { t } = useI18n();
   if (!trend || trend.length === 0) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Emotion Trend</Text>
+        <Text style={styles.title}>{t("valence.title")}</Text>
         <View style={styles.emptyRow}>
           <Image
             source={require("../../assets/images/insights/trend_empty.png")}
             style={styles.emptyImage}
             resizeMode="contain"
           />
-          <Text style={styles.emptyHint}>
-            Write an entry to see valence changes.
-          </Text>
+          <Text style={styles.emptyHint}>{t("valence.empty")}</Text>
         </View>
       </View>
     );
@@ -36,8 +36,21 @@ export default function ValenceSection({ range, trend }: Props) {
   // ---------------------------------------------------
   // 1. X labels
   // ---------------------------------------------------
-  const weekLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const monthLabels = ["Week1", "Week2", "Week3", "Week4"];
+  const weekLabels = [
+    t("day.mon"),
+    t("day.tue"),
+    t("day.wed"),
+    t("day.thu"),
+    t("day.fri"),
+    t("day.sat"),
+    t("day.sun"),
+  ];
+  const monthLabels = [
+    t("week.one"),
+    t("week.two"),
+    t("week.three"),
+    t("week.four"),
+  ];
 
   const labels = range === "week" ? weekLabels : monthLabels;
 
@@ -132,12 +145,12 @@ export default function ValenceSection({ range, trend }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Emotion Trend</Text>
+      <Text style={styles.title}>{t("valence.title")}</Text>
 
       {/* Positive / Negative labels */}
       <View style={styles.legendRow}>
-        <Text style={styles.legendPositive}>☀ Positive</Text>
-        <Text style={styles.legendNegative}>🌙 negative</Text>
+        <Text style={styles.legendPositive}>☀ {t("valence.positive")}</Text>
+        <Text style={styles.legendNegative}>🌙 {t("valence.negative")}</Text>
       </View>
 
       <Svg width={width} height={height}>

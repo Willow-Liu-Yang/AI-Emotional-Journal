@@ -15,14 +15,16 @@ import {
   View,
 } from "react-native";
 import { userApi } from "../api/user";
+import { useI18n } from "@/i18n";
 
 export default function NicknamePage() {
+  const { t } = useI18n();
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleContinue = async () => {
     if (!nickname.trim()) {
-      Alert.alert("Error", "Please enter a nickname.");
+      Alert.alert(t("common.errorTitle"), t("nickname.errorEmpty"));
       return;
     }
 
@@ -34,7 +36,7 @@ export default function NicknamePage() {
       console.log("TOKEN in nickname:", token);
 
       if (!token) {
-        Alert.alert("Not logged in", "Please log in again.");
+        Alert.alert(t("nickname.notLoggedTitle"), t("nickname.notLoggedBody"));
         router.replace("/login");
         return;
       }
@@ -42,14 +44,14 @@ export default function NicknamePage() {
       // PATCH /users/me/username
       await userApi.updateNickname(nickname);
 
-      Alert.alert("Success", "Nickname set successfully!");
+      Alert.alert(t("common.successTitle"), t("nickname.successBody"));
 
       // Nickname set successfully -> go to main tabs
       router.replace("/(tabs)");
 
     } catch (err: any) {
       console.error("Nickname error:", err);
-      Alert.alert("Error", err.message || "Unable to update nickname.");
+      Alert.alert(t("common.errorTitle"), err.message || t("nickname.errorUpdate"));
     } finally {
       setLoading(false);
     }
@@ -61,27 +63,23 @@ export default function NicknamePage() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>
-          What should we{"\n"}call you?
-        </Text>
+        <Text style={styles.title}>{t("nickname.title")}</Text>
 
         <Image
           source={require("../assets/images/login/bear.png")}
           style={styles.illustration}
         />
 
-        <Text style={styles.subtitle}>
-          Your nickname makes this space feel{"\n"}more like home.
-        </Text>
+        <Text style={styles.subtitle}>{t("nickname.subtitle")}</Text>
 
-        <Text style={styles.label}>Nickname</Text>
+        <Text style={styles.label}>{t("nickname.label")}</Text>
 
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
             value={nickname}
             onChangeText={setNickname}
-            placeholder="How should we call you?"
+            placeholder={t("nickname.placeholder")}
             placeholderTextColor="#c6b7a6"
           />
         </View>
@@ -94,13 +92,11 @@ export default function NicknamePage() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Continue</Text>
+            <Text style={styles.buttonText}>{t("nickname.button")}</Text>
           )}
         </TouchableOpacity>
 
-        <Text style={styles.footer}>
-          You can always change this later.
-        </Text>
+        <Text style={styles.footer}>{t("nickname.footer")}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

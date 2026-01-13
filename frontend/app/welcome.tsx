@@ -1,7 +1,10 @@
 import { router } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useI18n } from "@/i18n";
 
 export default function WelcomePage() {
+  const { t } = useI18n();
+
   return (
     <View style={styles.container}>
       <Image
@@ -9,15 +12,15 @@ export default function WelcomePage() {
         style={styles.illustration}
       />
 
-      <Text style={styles.title}>CapyDiary</Text>
+      <Text style={styles.title}>{t("welcome.title")}</Text>
 
-      <Text style={styles.subtitle}>Slow down.{'\n'}Let your thoughts float.</Text>
+      <Text style={styles.subtitle}>{t("welcome.subtitle")}</Text>
 
       <TouchableOpacity
         style={styles.button}
         onPress={() => router.push("/login")}
       >
-        <Text style={styles.buttonText}>Get Started</Text>
+        <Text style={styles.buttonText}>{t("welcome.button")}</Text>
       </TouchableOpacity>
     </View>
   );

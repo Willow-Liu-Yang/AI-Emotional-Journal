@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useI18n } from "@/i18n";
 
 type PromptItem = {
   id: string;
@@ -20,44 +21,14 @@ type PromptItem = {
   icon: any;
 };
 
-const PROMPTS: PromptItem[] = [
-  {
-    id: "capture_joy",
-    title: "Capture Joy",
-    description: "What little moment brought you joy today?",
-    icon: require("@/assets/images/icons/prompt/capture_joy.png"),
-  },
-  {
-    id: "let_it_out",
-    title: "Let It Out",
-    description: "What feelings have been quietly rising inside you?",
-    icon: require("@/assets/images/icons/prompt/let_it_out.png"),
-  },
-  {
-    id: "warm_moments",
-    title: "Warm Moments",
-    description: "What made you feel warm, safe, or comforted today?",
-    icon: require("@/assets/images/icons/prompt/warm_moments.png"),
-  },
-  {
-    id: "steps_forward",
-    title: "Steps Forward",
-    description: "What small step did you take toward something important?",
-    icon: require("@/assets/images/icons/prompt/steps_forward.png"),
-  },
-  {
-    id: "reflect_grow",
-    title: "Reflect & Grow",
-    description: "What did you learn about yourself today?",
-    icon: require("@/assets/images/icons/prompt/reflect_grow.png"),
-  },
-  {
-    id: "rest_gently",
-    title: "Rest Gently",
-    description: "What helped your body or mind rest today?",
-    icon: require("@/assets/images/icons/prompt/rest_gently.png"),
-  },
-];
+const PROMPT_ICONS: Record<string, any> = {
+  capture_joy: require("@/assets/images/icons/prompt/capture_joy.png"),
+  let_it_out: require("@/assets/images/icons/prompt/let_it_out.png"),
+  warm_moments: require("@/assets/images/icons/prompt/warm_moments.png"),
+  steps_forward: require("@/assets/images/icons/prompt/steps_forward.png"),
+  reflect_grow: require("@/assets/images/icons/prompt/reflect_grow.png"),
+  rest_gently: require("@/assets/images/icons/prompt/rest_gently.png"),
+};
 
 function PromptRow({
   item,
@@ -88,6 +59,46 @@ function PromptRow({
 
 export default function PromptLibraryScreen() {
   const router = useRouter();
+  const { t } = useI18n();
+
+  const prompts: PromptItem[] = [
+    {
+      id: "capture_joy",
+      title: t("prompt.capture_joy.title"),
+      description: t("prompt.capture_joy.desc"),
+      icon: PROMPT_ICONS.capture_joy,
+    },
+    {
+      id: "let_it_out",
+      title: t("prompt.let_it_out.title"),
+      description: t("prompt.let_it_out.desc"),
+      icon: PROMPT_ICONS.let_it_out,
+    },
+    {
+      id: "warm_moments",
+      title: t("prompt.warm_moments.title"),
+      description: t("prompt.warm_moments.desc"),
+      icon: PROMPT_ICONS.warm_moments,
+    },
+    {
+      id: "steps_forward",
+      title: t("prompt.steps_forward.title"),
+      description: t("prompt.steps_forward.desc"),
+      icon: PROMPT_ICONS.steps_forward,
+    },
+    {
+      id: "reflect_grow",
+      title: t("prompt.reflect_grow.title"),
+      description: t("prompt.reflect_grow.desc"),
+      icon: PROMPT_ICONS.reflect_grow,
+    },
+    {
+      id: "rest_gently",
+      title: t("prompt.rest_gently.title"),
+      description: t("prompt.rest_gently.desc"),
+      icon: PROMPT_ICONS.rest_gently,
+    },
+  ];
 
   const handleSelect = (promptKey: string) => {
     router.push({
@@ -105,19 +116,19 @@ export default function PromptLibraryScreen() {
             <Ionicons name="chevron-back" size={24} color="#5A4634" />
           </TouchableOpacity>
 
-          <Text style={styles.title}>All Prompts</Text>
+          <Text style={styles.title}>{t("promptLibrary.title")}</Text>
 
           <View style={styles.headerRightPlaceholder} />
         </View>
 
         {/* ✅ Hint */}
-        <Text style={styles.hint}>Tap a prompt to start writing.</Text>
+        <Text style={styles.hint}>{t("promptLibrary.hint")}</Text>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {PROMPTS.map((item) => (
+          {prompts.map((item) => (
             <PromptRow
               key={item.id}
               item={item}

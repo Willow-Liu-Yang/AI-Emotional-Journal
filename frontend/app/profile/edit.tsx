@@ -14,9 +14,11 @@ import {
   View,
   Image,
 } from "react-native";
+import { useI18n } from "@/i18n";
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { t } = useI18n();
 
   const [user, setUser] = useState<any>(null);
   const [nickname, setNickname] = useState<string>("");
@@ -35,10 +37,7 @@ export default function EditProfileScreen() {
         setNickname(data?.username ?? "");
       } catch (err) {
         console.log("Failed to load user", err);
-        Alert.alert(
-          "Error",
-          "Unable to load your profile. Please try again later."
-        );
+        Alert.alert(t("common.errorTitle"), t("profile.edit.errorLoad"));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -51,9 +50,9 @@ export default function EditProfileScreen() {
 
   function validateName(name: string) {
     const trimmed = name.trim();
-    if (!trimmed) return "Nickname cannot be empty.";
-    if (trimmed.length < 2) return "Nickname must be at least 2 characters.";
-    if (trimmed.length > 30) return "Nickname cannot exceed 30 characters.";
+    if (!trimmed) return t("profile.edit.errorEmpty");
+    if (trimmed.length < 2) return t("profile.edit.errorTooShort");
+    if (trimmed.length > 30) return t("profile.edit.errorTooLong");
     return null;
   }
 
@@ -65,23 +64,23 @@ export default function EditProfileScreen() {
       return;
     }
     if (!user) {
-      Alert.alert("Error", "User not found.");
+      Alert.alert(t("common.errorTitle"), t("profile.edit.errorUserNotFound"));
       return;
     }
 
     setSubmitting(true);
     try {
       await userApi.updateNickname(nickname.trim());
-      Alert.alert("Success", "Your nickname has been updated.", [
+      Alert.alert(t("common.successTitle"), t("profile.edit.successBody"), [
         {
-          text: "OK",
+          text: t("common.ok"),
           onPress: () => router.back(),
         },
       ]);
     } catch (err: any) {
       console.log("Failed to update nickname", err);
-      const msg = err?.message || "Failed to save changes. Please try again.";
-      Alert.alert("Error", msg);
+      const msg = err?.message || t("profile.edit.errorSave");
+      Alert.alert(t("common.errorTitle"), msg);
     } finally {
       setSubmitting(false);
     }
@@ -92,7 +91,7 @@ export default function EditProfileScreen() {
       <View style={styles.loadingWrap}>
         <ActivityIndicator size="large" color="#6A4A2A" />
         <Text style={{ marginTop: 12, color: "#6A4A2A" }}>
-          Loading profile…
+          {t("profile.edit.loading")}
         </Text>
       </View>
     );
@@ -117,7 +116,7 @@ export default function EditProfileScreen() {
             />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <Text style={styles.headerTitle}>{t("profile.edit.title")}</Text>
 
           <View style={{ width: 48 }} />
         </View>
@@ -126,11 +125,11 @@ export default function EditProfileScreen() {
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.formCard}>
-          <Text style={styles.label}>Nickname</Text>
+          <Text style={styles.label}>{t("profile.edit.label")}</Text>
           <TextInput
             value={nickname}
             onChangeText={setNickname}
-            placeholder="Enter your nickname"
+            placeholder={t("profile.edit.placeholder")}
             placeholderTextColor="#B08A68"
             style={[
               styles.input,
@@ -153,7 +152,7 @@ export default function EditProfileScreen() {
           {submitting ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveText}>Save changes</Text>
+            <Text style={styles.saveText}>{t("common.saveChanges")}</Text>
           )}
         </TouchableOpacity>
 
@@ -162,7 +161,7 @@ export default function EditProfileScreen() {
           onPress={() => router.back()}
           disabled={submitting}
         >
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Text style={styles.cancelText}>{t("profile.edit.cancel")}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

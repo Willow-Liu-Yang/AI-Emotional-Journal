@@ -5,6 +5,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { authApi } from "../api/auth";
 import { insightsApi } from "../api/insights";
 import { timeCapsuleApi } from "../api/timeCapsule";
+import { useI18n } from "@/i18n";
 
 import {
   ActivityIndicator,
@@ -21,6 +22,7 @@ import {
 } from "react-native";
 
 export default function Signup() {
+  const { t } = useI18n();
   const { height: screenH } = useWindowDimensions();
 
   // More compact for small screens (e.g., iPhone SE)
@@ -45,15 +47,17 @@ export default function Signup() {
   const handleRegister = async () => {
     if (loading) return;
     if (!email || !password) {
-      setError("Please fill in email and password.");
+      setError(t("signup.errorMissing"));
       return;
     }
     if (password.length < minPasswordLength) {
-      setError(`Password must be at least ${minPasswordLength} characters.`);
+      setError(
+        t("signup.errorMinLength", { min: String(minPasswordLength) })
+      );
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match.");
+      setError(t("signup.errorMismatch"));
       return;
     }
 
@@ -103,15 +107,15 @@ export default function Signup() {
 
         {/* Title: below image, aligned with Login */}
         <Text style={[styles.headerText, compact && styles.headerTextCompact]}>
-          Let&apos;s get cozy.
+          {t("signup.title")}
         </Text>
 
         {/* Email */}
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t("signup.emailLabel")}</Text>
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
-            placeholder="your@email.com"
+            placeholder={t("signup.emailPlaceholder")}
             placeholderTextColor="#c6b7a6"
             value={email}
             onChangeText={(value) => {
@@ -129,13 +133,13 @@ export default function Signup() {
 
         {/* Password */}
         <Text style={[styles.label, { marginTop: compact ? 12 : 14 }]}>
-          Password
+          {t("signup.passwordLabel")}
         </Text>
         <View style={styles.inputWrapper}>
           <TextInput
             ref={passwordRef}
             style={styles.input}
-            placeholder="********"
+            placeholder={t("signup.passwordPlaceholder")}
             placeholderTextColor="#c6b7a6"
             secureTextEntry={!showPassword}
             value={password}
@@ -158,13 +162,13 @@ export default function Signup() {
         </View>
         {/* Confirm Password */}
         <Text style={[styles.label, { marginTop: compact ? 12 : 14 }]}>
-          Confirm Password
+          {t("signup.confirmLabel")}
         </Text>
         <View style={styles.inputWrapper}>
           <TextInput
             ref={confirmRef}
             style={styles.input}
-            placeholder="********"
+            placeholder={t("signup.confirmPlaceholder")}
             placeholderTextColor="#c6b7a6"
             secureTextEntry
             value={confirm}
@@ -192,15 +196,15 @@ export default function Signup() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.signUpText}>Sign Up</Text>
+            <Text style={styles.signUpText}>{t("signup.button")}</Text>
           )}
         </TouchableOpacity>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
+          <Text style={styles.footerText}>{t("signup.footerPrompt")} </Text>
           <TouchableOpacity onPress={() => router.push("/login")}>
-            <Text style={styles.loginLink}>Log In</Text>
+            <Text style={styles.loginLink}>{t("signup.footerAction")}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

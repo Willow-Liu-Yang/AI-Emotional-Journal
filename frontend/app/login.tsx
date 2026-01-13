@@ -18,8 +18,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { authApi } from "../api/auth";
 import { insightsApi } from "../api/insights";
 import { timeCapsuleApi } from "../api/timeCapsule";
+import { useI18n } from "@/i18n";
 
 export default function LoginScreen() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +34,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (loading) return;
     if (!email || !password) {
-      setError("Please fill in both fields.");
+      setError(t("login.errorMissing"));
       return;
     }
 
@@ -46,7 +48,7 @@ export default function LoginScreen() {
       router.replace("/(tabs)");
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err?.message || "Unable to connect.");
+      setError(err?.message || t("login.errorUnable"));
     } finally {
       setLoading(false);
     }
@@ -72,14 +74,14 @@ export default function LoginScreen() {
               style={styles.illustration}
             />
 
-            <Text style={styles.title}>Welcome back!</Text>
+            <Text style={styles.title}>{t("login.title")}</Text>
 
             {/* Email */}
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t("login.emailLabel")}</Text>
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder="your@email.com"
+                placeholder={t("login.emailPlaceholder")}
                 placeholderTextColor="#c6b7a6"
                 value={email}
                 onChangeText={(value) => {
@@ -99,12 +101,14 @@ export default function LoginScreen() {
             </View>
 
             {/* Password */}
-            <Text style={[styles.label, styles.passwordLabel]}>Password</Text>
+            <Text style={[styles.label, styles.passwordLabel]}>
+              {t("login.passwordLabel")}
+            </Text>
             <View style={styles.inputWrapper}>
               <TextInput
                 ref={passwordRef}
                 style={styles.input}
-                placeholder="********"
+                placeholder={t("login.passwordPlaceholder")}
                 placeholderTextColor="#c6b7a6"
                 secureTextEntry={!showPassword}
                 value={password}
@@ -143,15 +147,15 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.loginText}>Log In</Text>
+                <Text style={styles.loginText}>{t("login.button")}</Text>
               )}
             </TouchableOpacity>
 
             {/* Footer */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
+              <Text style={styles.footerText}>{t("login.footerPrompt")} </Text>
               <TouchableOpacity onPress={() => router.push("/signup")}>
-                <Text style={styles.signup}>Sign Up</Text>
+                <Text style={styles.signup}>{t("login.footerAction")}</Text>
               </TouchableOpacity>
             </View>
           </View>

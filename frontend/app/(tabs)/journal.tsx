@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { entriesApi } from "@/api/entries";
 import { timeCapsuleApi, TimeCapsule } from "@/api/timeCapsule";
+import { useI18n } from "@/i18n";
 
 // Emotion -> color mapping
 const EMOTION_COLORS: Record<string, string> = {
@@ -41,6 +42,7 @@ function filterEntriesByMonth(allEntries: any[], monthStr: string) {
 
 export default function JournalListPage() {
   const router = useRouter();
+  const { language, t } = useI18n();
   const [entries, setEntries] = useState<any[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState<string>("");
@@ -155,7 +157,7 @@ export default function JournalListPage() {
       )}
       {/* Header */}
       <View style={styles.headerWrap}>
-        <Text style={styles.header}>Journal List</Text>
+        <Text style={styles.header}>{t("journal.title")}</Text>
 
         {/* Top-right avatar (same as home) */}
         <TouchableOpacity onPress={() => router.push("/profile")}>
@@ -186,19 +188,23 @@ export default function JournalListPage() {
           />
           <View style={styles.capsuleTextWrap}>
             <Text style={styles.capsuleTitle}>
-              {capsule?.found ? "Time Capsule" : "Empty Capsule"}
+              {capsule?.found
+                ? t("journal.timeCapsule.title")
+                : t("journal.timeCapsule.emptyTitle")}
             </Text>
             {capsule?.found && capsule?.source_date && (
               <Text style={styles.capsuleDate}>
-                From {formatCapsuleDate(capsule.source_date)}
+                {t("journal.timeCapsule.from", {
+                  date: formatCapsuleDate(capsule.source_date, language),
+                })}
               </Text>
             )}
             <Text style={styles.capsuleBody}>
               {capsuleLoading
-                ? "Loading your time capsule..."
+                ? t("journal.timeCapsule.loading")
                 : capsule?.found
-                  ? capsule?.quote || "A special moment from your past."
-                  : "Your time capsule is waiting to be filled."}
+                  ? capsule?.quote || t("journal.timeCapsule.quoteFallback")
+                  : t("journal.timeCapsule.emptyBody")}
             </Text>
           </View>
         </TouchableOpacity>
@@ -224,7 +230,9 @@ export default function JournalListPage() {
           style={styles.monthRow}
         >
           <Text style={styles.monthText}>
-            {currentMonth ? toLongMonth(currentMonth) : "NO ENTRIES YET"}
+            {currentMonth
+              ? toLongMonth(currentMonth, language)
+              : t("journal.monthNone")}
           </Text>
           {currentMonth !== "" && <Text style={styles.arrow}>▼</Text>}
         </TouchableOpacity>
@@ -237,7 +245,9 @@ export default function JournalListPage() {
                 onPress={() => handleSelectMonth(m)}
                 style={styles.monthItem}
               >
-                <Text style={styles.monthItemText}>{toLongMonth(m)}</Text>
+                <Text style={styles.monthItemText}>
+                  {toLongMonth(m, language)}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -266,8 +276,7 @@ export default function JournalListPage() {
                 resizeMode="contain"
               />
               <Text style={styles.popupText}>
-                Revisit a past moment to see your growth and reflect on your
-                journey.
+                {t("journal.helpText")}
               </Text>
             </View>
           </View>
@@ -280,11 +289,14 @@ export default function JournalListPage() {
 /** ---- Journal Card ---- **/
 function JournalCard({ entry }: any) {
   const router = useRouter(); // Use useRouter in child component too
+  const { language } = useI18n();
 
   const dateObj = new Date(entry.created_at);
   const day = dateObj.getDate();
   const weekday = dateObj
-    .toLocaleDateString("en-US", { weekday: "short" })
+    .toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
+      weekday: "short",
+    })
     .toUpperCase();
 
   // Normalize emotion to lowercase before color lookup
@@ -317,18 +329,21 @@ function JournalCard({ entry }: any) {
 }
 
 /** ---- Month Helper ---- **/
-function toLongMonth(str: string) {
+function toLongMonth(str: string, language: "en" | "zh") {
   const [y, m] = str.split("-");
   const d = new Date(Number(y), Number(m) - 1, 1);
   return d
-    .toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    .toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
+      month: "long",
+      year: "numeric",
+    })
     .toUpperCase();
 }
 
-function formatCapsuleDate(isoDate: string) {
+function formatCapsuleDate(isoDate: string, language: "en" | "zh") {
   const d = new Date(isoDate);
   if (Number.isNaN(d.getTime())) return isoDate;
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
     month: "short",
     day: "2-digit",
     year: "numeric",

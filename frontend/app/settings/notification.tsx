@@ -1,8 +1,10 @@
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useI18n } from "@/i18n";
 
 export default function NotificationSettings() {
   const router = useRouter();
+  const { t } = useI18n();
 
   return (
     <View style={styles.page}>
@@ -14,14 +16,14 @@ export default function NotificationSettings() {
               style={styles.closeIcon}
             />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notification</Text>
+          <Text style={styles.headerTitle}>{t("settings.notification.title")}</Text>
           <View style={{ width: 48 }} />
         </View>
       </View>
 
       <View style={styles.content}>
         <View style={styles.placeholderCard}>
-          <Text style={styles.placeholderText}>Coming soon.</Text>
+          <Text style={styles.placeholderText}>{t("common.comingSoon")}</Text>
         </View>
       </View>
     </View>

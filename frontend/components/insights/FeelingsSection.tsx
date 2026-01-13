@@ -2,6 +2,7 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { useI18n } from "@/i18n";
 
 type EmotionMap = Record<string, number>;
 
@@ -10,19 +11,18 @@ interface Props {
 }
 
 export default function FeelingsSection({ emotions }: Props) {
+  const { t } = useI18n();
   if (!emotions || Object.keys(emotions).length === 0) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Top Feelings</Text>
+        <Text style={styles.title}>{t("feelings.title")}</Text>
         <View style={styles.emptyRow}>
           <Image
             source={require("../../assets/images/insights/topfeelings_empty.png")}
             style={styles.emptyImage}
             resizeMode="contain"
           />
-          <Text style={styles.emptyHint}>
-            Write an entry to see your emotions.
-          </Text>
+          <Text style={styles.emptyHint}>{t("feelings.empty")}</Text>
         </View>
       </View>
     );
@@ -55,16 +55,14 @@ export default function FeelingsSection({ emotions }: Props) {
   if (entries.length === 0) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Top Feelings</Text>
+        <Text style={styles.title}>{t("feelings.title")}</Text>
         <View style={styles.emptyRow}>
           <Image
             source={require("../../assets/images/insights/topfeelings_empty.png")}
             style={styles.emptyImage}
             resizeMode="contain"
           />
-          <Text style={styles.emptyHint}>
-            Write an entry to see your emotions.
-          </Text>
+          <Text style={styles.emptyHint}>{t("feelings.empty")}</Text>
         </View>
       </View>
     );
@@ -75,7 +73,7 @@ export default function FeelingsSection({ emotions }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Top Feelings</Text>
+      <Text style={styles.title}>{t("feelings.title")}</Text>
 
       <View style={styles.container}>
         <Svg width={size} height={size}>
@@ -129,10 +127,12 @@ export default function FeelingsSection({ emotions }: Props) {
         <View style={styles.listContainer}>
           {entries.map(([emotion, count]) => {
             const pct = (count || 0) / total;
+            const emotionLabel =
+              t(`emotion.${emotion}` as any) || capitalize(emotion);
             return (
               <Text key={emotion} style={styles.listItem}>
                 <Text style={{ color: COLORS[emotion] ?? "#666" }}>● </Text>
-                {capitalize(emotion)} ({Math.round(pct * 100)}%)
+                {emotionLabel} ({Math.round(pct * 100)}%)
               </Text>
             );
           })}

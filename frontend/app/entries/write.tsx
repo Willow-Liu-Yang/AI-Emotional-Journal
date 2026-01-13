@@ -18,42 +18,52 @@ import {
 } from "react-native";
 
 import { entriesApi } from "@/api/entries";
+import { useI18n } from "@/i18n";
 import { insightsApi } from "@/api/insights";
 
 // ===== prompt data (must cover all incoming promptKey) =====
-const PROMPTS: Record<string, { icon: any; text: string }> = {
-  capture_joy: {
-    icon: require("@/assets/images/icons/prompt/capture_joy.png"),
-    text: "What little moment brought you joy today?",
-  },
-  let_it_out: {
-    icon: require("@/assets/images/icons/prompt/let_it_out.png"),
-    text: "What feelings have been quietly rising inside you?",
-  },
-  warm_moments: {
-    icon: require("@/assets/images/icons/prompt/warm_moments.png"),
-    text: "What made you feel warm, safe, or comforted today?",
-  },
-  steps_forward: {
-    icon: require("@/assets/images/icons/prompt/steps_forward.png"),
-    text: "What small step did you take toward something important?",
-  },
-  reflect_grow: {
-    icon: require("@/assets/images/icons/prompt/reflect_grow.png"),
-    text: "What did you learn about yourself today?",
-  },
-  rest_gently: {
-    icon: require("@/assets/images/icons/prompt/rest_gently.png"),
-    text: "What helped your body or mind rest today?",
-  },
+const PROMPT_ICONS: Record<string, any> = {
+  capture_joy: require("@/assets/images/icons/prompt/capture_joy.png"),
+  let_it_out: require("@/assets/images/icons/prompt/let_it_out.png"),
+  warm_moments: require("@/assets/images/icons/prompt/warm_moments.png"),
+  steps_forward: require("@/assets/images/icons/prompt/steps_forward.png"),
+  reflect_grow: require("@/assets/images/icons/prompt/reflect_grow.png"),
+  rest_gently: require("@/assets/images/icons/prompt/rest_gently.png"),
 };
 
 export default function WriteScreen() {
   const router = useRouter();
+  const { language, t } = useI18n();
 
   // promptKey from Home/PromptLibrary
   const { promptKey } = useLocalSearchParams<{ promptKey?: string }>();
-  const promptData = promptKey ? PROMPTS[promptKey] : null;
+  const prompts: Record<string, { icon: any; text: string }> = {
+    capture_joy: {
+      icon: PROMPT_ICONS.capture_joy,
+      text: t("prompt.capture_joy.desc"),
+    },
+    let_it_out: {
+      icon: PROMPT_ICONS.let_it_out,
+      text: t("prompt.let_it_out.desc"),
+    },
+    warm_moments: {
+      icon: PROMPT_ICONS.warm_moments,
+      text: t("prompt.warm_moments.desc"),
+    },
+    steps_forward: {
+      icon: PROMPT_ICONS.steps_forward,
+      text: t("prompt.steps_forward.desc"),
+    },
+    reflect_grow: {
+      icon: PROMPT_ICONS.reflect_grow,
+      text: t("prompt.reflect_grow.desc"),
+    },
+    rest_gently: {
+      icon: PROMPT_ICONS.rest_gently,
+      text: t("prompt.rest_gently.desc"),
+    },
+  };
+  const promptData = promptKey ? prompts[promptKey] : null;
 
   const [content, setContent] = useState("");
   const [needAI, setNeedAI] = useState(true);
@@ -61,7 +71,7 @@ export default function WriteScreen() {
 
   async function handleSubmit() {
     if (!content.trim()) {
-      alert("Please write something first.");
+      alert(t("write.alertEmpty"));
       return;
     }
 
@@ -78,14 +88,14 @@ export default function WriteScreen() {
       void insightsApi.refreshToday("month");
       router.replace("/(tabs)/journal");
     } catch (err: any) {
-      alert(err.message || "Failed to save entry.");
+      alert(err.message || t("write.alertSaveError"));
     } finally {
       setLoading(false);
     }
   }
 
   const todayLabel = new Date()
-    .toLocaleDateString("en-US", {
+    .toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
       weekday: "long",
       month: "short",
       day: "numeric",
@@ -125,7 +135,7 @@ export default function WriteScreen() {
             <View style={styles.editorCard}>
               <TextInput
                 style={styles.editorInput}
-                placeholder="Write about your day..."
+                placeholder={t("write.placeholder")}
                 placeholderTextColor="#B08663"
                 multiline
                 scrollEnabled={true}
@@ -143,7 +153,7 @@ export default function WriteScreen() {
         {/* Bottom Bar: in normal layout, real height; lifts with keyboard */}
         <View style={styles.bottomBar}>
           <View style={styles.aiRow}>
-            <Text style={styles.aiLabel}>AI Feedback</Text>
+            <Text style={styles.aiLabel}>{t("write.aiFeedback")}</Text>
             <Switch
               value={needAI}
               onValueChange={setNeedAI}
@@ -158,7 +168,9 @@ export default function WriteScreen() {
             disabled={loading}
           >
             <Ionicons name="checkmark" size={18} color="white" />
-            <Text style={styles.doneText}>{loading ? "Saving..." : "Done"}</Text>
+            <Text style={styles.doneText}>
+              {loading ? t("write.saving") : t("write.done")}
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

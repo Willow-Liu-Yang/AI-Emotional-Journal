@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import type { Companion } from "@/api/companions"; // Reuse type
+import { useI18n } from "@/i18n";
 
 // ---------- types ----------
 type SettingsItem = {
@@ -30,40 +31,6 @@ type CurrentUser = {
   companion?: Companion | null;
 };
 
-// ---------- config ----------
-const SETTINGS_ITEMS: SettingsItem[] = [
-  {
-    key: "notification",
-    label: "Notification",
-    icon: require("@/assets/images/profile/icon_notification.png"),
-    route: "/settings/notification",
-  },
-  {
-    key: "language",
-    label: "Language",
-    icon: require("@/assets/images/profile/icon_language.png"),
-    route: "/settings/language",
-  },
-  {
-    key: "theme",
-    label: "Theme",
-    icon: require("@/assets/images/profile/icon_theme.png"),
-    route: "/settings/theme",
-  },
-  {
-    key: "privacy",
-    label: "Privacy & Security",
-    icon: require("@/assets/images/profile/icon_privacy.png"),
-    route: "/settings/privacy",
-  },
-  {
-    key: "help",
-    label: "Help & Support",
-    icon: require("@/assets/images/profile/icon_help.png"),
-    route: "/settings/help",
-  },
-];
-
 const getCompanionImage = (name?: string) => {
   switch (name) {
     case "Sol":
@@ -78,6 +45,7 @@ const getCompanionImage = (name?: string) => {
 // ---------- component ----------
 export default function ProfileScreen() {
   const router = useRouter();
+  const { language, t } = useI18n();
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   // Refresh /users/me whenever the screen gains focus
@@ -107,17 +75,20 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
+        <Text>{t("profile.loading")}</Text>
       </View>
     );
   }
 
   const joinDate = user.created_at
-    ? new Date(user.created_at).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
+    ? new Date(user.created_at).toLocaleDateString(
+        language === "zh" ? "zh-CN" : "en-US",
+        {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }
+      )
     : "";
 
   const companion = user.companion || null;
@@ -125,7 +96,44 @@ export default function ProfileScreen() {
   const companionTags =
     companion?.tags && companion.tags.length > 0
       ? companion.tags
-      : ["Gentle", "Insightful", "Calming"];
+      : [
+          t("companion.tag.gentle"),
+          t("companion.tag.insightful"),
+          t("companion.tag.calming"),
+        ];
+
+  const settingsItems: SettingsItem[] = [
+    {
+      key: "notification",
+      label: t("profile.settings.notification"),
+      icon: require("@/assets/images/profile/icon_notification.png"),
+      route: "/settings/notification",
+    },
+    {
+      key: "language",
+      label: t("profile.settings.language"),
+      icon: require("@/assets/images/profile/icon_language.png"),
+      route: "/settings/language",
+    },
+    {
+      key: "theme",
+      label: t("profile.settings.theme"),
+      icon: require("@/assets/images/profile/icon_theme.png"),
+      route: "/settings/theme",
+    },
+    {
+      key: "privacy",
+      label: t("profile.settings.privacy"),
+      icon: require("@/assets/images/profile/icon_privacy.png"),
+      route: "/settings/privacy",
+    },
+    {
+      key: "help",
+      label: t("profile.settings.help"),
+      icon: require("@/assets/images/profile/icon_help.png"),
+      route: "/settings/help",
+    },
+  ];
 
   return (
     <ScrollView
@@ -146,7 +154,7 @@ export default function ProfileScreen() {
             />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>My Space</Text>
+          <Text style={styles.headerTitle}>{t("profile.title")}</Text>
 
           {/* Right placeholder to center title */}
           <View style={{ width: 48 }} />
@@ -166,7 +174,7 @@ export default function ProfileScreen() {
           <View style={styles.profileText}>
             <View style={styles.nameRow}>
               <Text style={styles.usernameText}>
-                {user.username || "User"}
+                {user.username || t("profile.userFallback")}
               </Text>
 
               <TouchableOpacity
@@ -178,7 +186,9 @@ export default function ProfileScreen() {
             </View>
 
             {joinDate ? (
-              <Text style={styles.joinText}>Joined on {joinDate}</Text>
+              <Text style={styles.joinText}>
+                {t("profile.joinedOn", { date: joinDate })}
+              </Text>
             ) : null}
           </View>
         </View>
@@ -205,8 +215,10 @@ export default function ProfileScreen() {
               />
             </View>
 
-            <View style={styles.companionTextWrapper}>
-              <Text style={styles.companionSectionTitle}>My AI Companion</Text>
+          <View style={styles.companionTextWrapper}>
+              <Text style={styles.companionSectionTitle}>
+                {t("profile.companion")}
+              </Text>
 
               <View style={styles.companionNameRow}>
                 <Text
@@ -229,7 +241,7 @@ export default function ProfileScreen() {
                 numberOfLines={2}
                 ellipsizeMode="tail"
               >
-                {companion?.identity_title || "Your Gentle Companion"}
+                {companion?.identity_title || t("profile.companionFallbackTitle")}
               </Text>
             </View>
           </View>
@@ -246,7 +258,7 @@ export default function ProfileScreen() {
 
         {/* Settings list */}
         <View style={styles.menuSection}>
-          {SETTINGS_ITEMS.map((item) => (
+          {settingsItems.map((item) => (
             <TouchableOpacity
               key={item.key}
               style={styles.menuRow}
@@ -274,9 +286,9 @@ export default function ProfileScreen() {
               router.replace("/login");
             }}
           >
-            <Text style={styles.logoutText}>Log Out</Text>
+            <Text style={styles.logoutText}>{t("profile.logout")}</Text>
           </TouchableOpacity>
-          <Text style={styles.versionText}>CapyDiary v1.0.1</Text>
+          <Text style={styles.versionText}>{t("profile.version")}</Text>
         </View>
       </View>
     </ScrollView>

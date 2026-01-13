@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { authApi } from "@/api/auth";
 import { companionsApi, Companion as BaseCompanion } from "@/api/companions";
+import { useI18n } from "@/i18n";
 
 // ---- Types: extend API with description / avatar_key ----
 type Companion = BaseCompanion & {
@@ -43,6 +44,7 @@ function getCompanionImage(c: Companion) {
 
 export default function CompanionSelectScreen() {
   const router = useRouter();
+  const { t } = useI18n();
 
   const [companions, setCompanions] = useState<Companion[]>([]);
   const [currentId, setCurrentId] = useState<number | null>(null);
@@ -67,7 +69,7 @@ export default function CompanionSelectScreen() {
       } catch (err) {
         console.log("Load companions error:", err);
         if (active) {
-          Alert.alert("Error", "Failed to load AI companions.");
+          Alert.alert(t("common.errorTitle"), t("companion.errorLoad"));
         }
       } finally {
         if (active) setLoading(false);
@@ -88,10 +90,10 @@ export default function CompanionSelectScreen() {
       await companionsApi.select(id);
       setCurrentId(id); // Only update local selection, do not auto-return
 
-      Alert.alert("Updated", "Your AI Companion has been updated.");
+      Alert.alert(t("common.updatedTitle"), t("companion.updatedBody"));
     } catch (err) {
       console.log("Select companion error:", err);
-      Alert.alert("Error", "Failed to update your AI Companion.");
+      Alert.alert(t("common.errorTitle"), t("companion.errorUpdate"));
     } finally {
       setSavingId(null);
     }
@@ -102,7 +104,7 @@ export default function CompanionSelectScreen() {
       <View style={styles.loadingWrap}>
         <ActivityIndicator size="large" color="#6A4A2A" />
         <Text style={{ marginTop: 10, color: "#6A4A2A" }}>
-          Loading companions…
+          {t("companion.loading")}
         </Text>
       </View>
     );
@@ -122,15 +124,13 @@ export default function CompanionSelectScreen() {
           />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>My AI Companion</Text>
+        <Text style={styles.headerTitle}>{t("companion.title")}</Text>
 
         {/* Right placeholder to center title */}
         <View style={{ width: 40 }} />
       </View>
 
-      <Text style={styles.headerSubtitle}>
-        Connect with the listener who understands you best.
-      </Text>
+      <Text style={styles.headerSubtitle}>{t("companion.subtitle")}</Text>
 
       <ScrollView
         style={styles.scroll}
@@ -205,15 +205,15 @@ export default function CompanionSelectScreen() {
           activeOpacity={0.9}
           onPress={() =>
             Alert.alert(
-              "Coming soon",
-              "Custom listeners will be available in a future update."
+              t("companion.customTitle"),
+              t("companion.customBody")
             )
           }
         >
           <View style={styles.customIconWrapper}>
             <Ionicons name="add" size={20} color="#5A3E24" />
           </View>
-          <Text style={styles.customText}>Customize Your Listener</Text>
+          <Text style={styles.customText}>{t("companion.customButton")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>

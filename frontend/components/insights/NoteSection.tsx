@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Image, Platform, StyleSheet, Text, View } from "react-native";
+import { useI18n } from "@/i18n";
 
 export default function NoteSection({
   note,
@@ -10,9 +11,10 @@ export default function NoteSection({
   note: string;
   author: string;
 }) {
+  const { t } = useI18n();
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>AI Companion Note</Text>
+      <Text style={styles.title}>{t("note.title")}</Text>
       <View style={styles.content}>
         <Image
           source={require("../../assets/images/insights/note.png")}
