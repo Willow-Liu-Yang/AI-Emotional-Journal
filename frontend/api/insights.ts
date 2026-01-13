@@ -1,6 +1,16 @@
 // frontend/api/insights.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiRequest } from "./index";
+import { apiRequest, getToken } from "./index";
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function getCacheKey(range: "week" | "month") {
+  const token = await getToken();
+  const tokenSuffix = token ? token.slice(-12) : "anon";
+  return `insights_${range}_${tokenSuffix}_${getTodayKey()}`;
+}
 
 export const insightsApi = {
   async getInsights(range: "week" | "month") {
@@ -8,8 +18,7 @@ export const insightsApi = {
   },
 
   async getInsightsCached(range: "week" | "month") {
-    const todayKey = new Date().toISOString().slice(0, 10);
-    const cacheKey = `insights_${range}_${todayKey}`;
+    const cacheKey = await getCacheKey(range);
 
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
@@ -28,8 +37,7 @@ export const insightsApi = {
   },
 
   async preloadToday(range: "week" | "month") {
-    const todayKey = new Date().toISOString().slice(0, 10);
-    const cacheKey = `insights_${range}_${todayKey}`;
+    const cacheKey = await getCacheKey(range);
 
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
@@ -43,6 +51,26 @@ export const insightsApi = {
       await AsyncStorage.setItem(cacheKey, JSON.stringify(res));
     } catch {
       // Ignore preload failures.
+    }
+  },
+
+  async refreshToday(range: "week" | "month") {
+    const cacheKey = await getCacheKey(range);
+    const res = await apiRequest(`/insights/?range=${range}`);
+    try {
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(res));
+    } catch {
+      // Ignore cache write errors.
+    }
+    return res;
+  },
+
+  async invalidateToday(range: "week" | "month") {
+    const cacheKey = await getCacheKey(range);
+    try {
+      await AsyncStorage.removeItem(cacheKey);
+    } catch {
+      // Ignore cache delete errors.
     }
   },
 };

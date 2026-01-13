@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiRequest } from "./index";
+import { apiRequest, getToken } from "./index";
 
 export type TimeCapsuleSourceLevel = "year" | "month" | "week";
 
@@ -11,14 +11,20 @@ export interface TimeCapsule {
   entry_id?: number | null;
 }
 
-function getTodayCacheKey() {
-  const todayKey = new Date().toISOString().slice(0, 10);
-  return `time_capsule_${todayKey}`;
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function getTodayCacheKey() {
+  const token = await getToken();
+  const tokenSuffix = token ? token.slice(-12) : "anon";
+  return `time_capsule_${tokenSuffix}_${getTodayKey()}`;
 }
 
 async function readCachedToday(): Promise<TimeCapsule | null> {
   try {
-    const cached = await AsyncStorage.getItem(getTodayCacheKey());
+    const cacheKey = await getTodayCacheKey();
+    const cached = await AsyncStorage.getItem(cacheKey);
     if (!cached) return null;
     return JSON.parse(cached);
   } catch {
@@ -28,7 +34,8 @@ async function readCachedToday(): Promise<TimeCapsule | null> {
 
 async function writeCachedToday(data: TimeCapsule): Promise<void> {
   try {
-    await AsyncStorage.setItem(getTodayCacheKey(), JSON.stringify(data));
+    const cacheKey = await getTodayCacheKey();
+    await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
   } catch {
     // Ignore cache write errors.
   }

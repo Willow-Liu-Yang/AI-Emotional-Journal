@@ -18,6 +18,7 @@ import {
 } from "react-native";
 
 import { entriesApi } from "@/api/entries";
+import { insightsApi } from "@/api/insights";
 
 // ===== prompt data (must cover all incoming promptKey) =====
 const PROMPTS: Record<string, { icon: any; text: string }> = {
@@ -73,6 +74,8 @@ export default function WriteScreen() {
         need_ai_reply: needAI,
       });
 
+      void insightsApi.refreshToday("week");
+      void insightsApi.refreshToday("month");
       router.replace("/(tabs)/journal");
     } catch (err: any) {
       alert(err.message || "Failed to save entry.");

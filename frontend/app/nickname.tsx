@@ -114,7 +114,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 36,
+    fontSize: 30,
+    lineHeight: 36,
     fontWeight: "700",
     color: "#5A4634",
     textAlign: "center",
