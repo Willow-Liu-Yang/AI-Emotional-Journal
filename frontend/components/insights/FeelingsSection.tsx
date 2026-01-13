@@ -41,8 +41,8 @@ export default function FeelingsSection({ emotions }: Props) {
   };
 
   // donut chart params
-  const size = 160;
-  const strokeWidth = 26;
+  const size = 140;
+  const strokeWidth = 22;
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;

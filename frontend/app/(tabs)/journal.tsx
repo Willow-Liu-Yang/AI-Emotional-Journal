@@ -146,6 +146,13 @@ export default function JournalListPage() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {showMonthSelector && (
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowMonthSelector(false)}
+          style={styles.dropdownOverlay}
+        />
+      )}
       {/* Header */}
       <View style={styles.headerWrap}>
         <Text style={styles.header}>Journal List</Text>
@@ -448,6 +455,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 10,
     position: "relative",
+    zIndex: 2,
   },
   monthRow: {
     flexDirection: "row",
@@ -485,6 +493,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
     zIndex: 10,
+  },
+  dropdownOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
   },
   monthItem: {
     paddingVertical: 8,

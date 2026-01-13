@@ -6,39 +6,41 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { I18nProvider } from '@/i18n';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      
-      <Stack
-        screenOptions={{
-          headerShown: false,     // Hide header globally
-        }}
-      >
-        {/* Global single-page screens */}
-        <Stack.Screen name="welcome" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="signup" />
-        <Stack.Screen name="nickname" />
-        <Stack.Screen name="promptLibrary" />
-        <Stack.Screen name="write" />
+      <I18nProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,     // Hide header globally
+          }}
+        >
+          {/* Global single-page screens */}
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="signup" />
+          <Stack.Screen name="nickname" />
+          <Stack.Screen name="promptLibrary" />
+          <Stack.Screen name="write" />
 
-        {/* Tabs as the main app sub-routes */}
-        <Stack.Screen 
-          name="(tabs)" 
-          options={{ headerShown: false }}  // Key: do not add header for tabs
-        />
+          {/* Tabs as the main app sub-routes */}
+          <Stack.Screen
+            name="(tabs)"
+            options={{ headerShown: false }}  // Key: do not add header for tabs
+          />
 
-        <Stack.Screen 
-          name="modal" 
-          options={{ presentation: 'modal' }} 
-        />
-      </Stack>
+          <Stack.Screen
+            name="modal"
+            options={{ presentation: 'modal' }}
+          />
+        </Stack>
 
-      <StatusBar style="auto" />
+        <StatusBar style="auto" />
+      </I18nProvider>
     </ThemeProvider>
   );
 }

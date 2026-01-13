@@ -1,8 +1,8 @@
 // app/(tabs)/index.tsx
 
 import { authApi } from "@/api/auth";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -14,6 +14,7 @@ import {
 } from "react-native";
 
 import { HomeCard } from "@/components/HomeCard";
+import { useI18n } from "@/i18n";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.78;
@@ -21,28 +22,38 @@ const CARD_SPACING = 18;
 
 export default function MainPage() {
   const router = useRouter();
+  const { language, t } = useI18n();
   const [username, setUsername] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
   const today = new Date()
-    .toLocaleDateString("en-US", {
+    .toLocaleDateString(language === "zh" ? "zh-CN" : "en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
     })
     .toUpperCase();
 
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const data = await authApi.getCurrentUser();
-        if (data?.username) setUsername(data.username);
-      } catch (err) {
-        console.log("Failed to load user:", err);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function fetchUser() {
+        try {
+          const data = await authApi.getCurrentUser();
+          if (active) setUsername(data?.username ?? "");
+        } catch (err) {
+          console.log("Failed to load user:", err);
+        }
       }
-    }
-    fetchUser();
-  }, []);
+
+      fetchUser();
+
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -58,7 +69,11 @@ export default function MainPage() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.greeting}>Good morning, {username || "friend"}.</Text>
+      <Text style={styles.greeting}>
+        {t("home.greeting", {
+          name: username || t("home.friend"),
+        })}
+      </Text>
 
       <Image
         source={require("@/assets/images/login/bear.png")}
@@ -69,13 +84,13 @@ export default function MainPage() {
       {/* Centered line: Need... + See all */}
       <View style={styles.promptHeaderCentered}>
         <Text style={styles.promptLine}>
-          Need a prompt to start?
+          {t("home.promptLine")}
           <Text
             style={styles.promptLink}
             onPress={() => router.push("/promptLibrary")}
           >
             {" "}
-            See all &gt;
+            {t("home.seeAll")}
           </Text>
         </Text>
       </View>
@@ -102,8 +117,8 @@ export default function MainPage() {
           <View style={{ width: CARD_WIDTH }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/capture_joy.png")}
-              title="Capture Joy"
-              text="What little moment brought you joy today?"
+              title={t("home.card.captureJoy.title")}
+              text={t("home.card.captureJoy.text")}
               background="#FAF1E5"
               onPress={() =>
                 router.push({
@@ -117,8 +132,8 @@ export default function MainPage() {
           <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/let_it_out.png")}
-              title="Let It Out"
-              text="What feelings have been quietly rising inside you?"
+              title={t("home.card.letItOut.title")}
+              text={t("home.card.letItOut.text")}
               background="#FAF1E5"
               onPress={() =>
                 router.push({
@@ -132,8 +147,8 @@ export default function MainPage() {
           <View style={{ width: CARD_WIDTH, marginLeft: CARD_SPACING }}>
             <HomeCard
               icon={require("@/assets/images/icons/prompt/steps_forward.png")}
-              title="Steps Forward"
-              text="What small step did you take toward something important?"
+              title={t("home.card.stepsForward.title")}
+              text={t("home.card.stepsForward.text")}
               background="#FAF1E5"
               onPress={() =>
                 router.push({
@@ -161,7 +176,7 @@ export default function MainPage() {
         style={styles.writeBtn}
         onPress={() => router.push("/entries/write")}
       >
-        <Text style={styles.writeBtnText}>Start writing for today</Text>
+        <Text style={styles.writeBtnText}>{t("home.writeButton")}</Text>
       </TouchableOpacity>
     </View>
   );

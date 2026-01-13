@@ -14,6 +14,8 @@ import {
   Alert,
   Image,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import { entriesApi } from "@/api/entries";
@@ -174,8 +176,9 @@ export default function EntryDetailScreen() {
   const timeLabel =
     createdAt &&
     createdAt.toLocaleTimeString("en-US", {
-      hour: "numeric",
+      hour: "2-digit",
       minute: "2-digit",
+      hour12: false,
     });
 
   // Top-right menu: share + delete entry
@@ -216,7 +219,12 @@ export default function EntryDetailScreen() {
   const companionUI = COMPANION_UI[companionId] ?? COMPANION_UI[1];
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F2E4D2" }}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 6 : 0}
+    >
+      <View style={styles.screen}>
       {/* Header: same as write.tsx, with extra time row */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -361,7 +369,8 @@ export default function EntryDetailScreen() {
           </>
         )}
       </ScrollView>
-    </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -397,8 +406,9 @@ function CommentCard({
     .toLocaleDateString("en-US", { month: "short", day: "numeric" })
     .toUpperCase();
   const timeLabel = created.toLocaleTimeString("en-US", {
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 
   return (
@@ -429,6 +439,10 @@ function CommentCard({
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#F2E4D2",
+  },
   headerRow: {
     paddingTop: 70,
     paddingHorizontal: 18,
